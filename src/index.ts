@@ -42,6 +42,7 @@ const resizeScreen = () => {
   document.body.style.height = `${window.innerHeight}px`;
   model.screenwidth = window.innerWidth;
   model.screenheight = window.innerHeight;
+  UI.update();
 };
 
 const init = async () => {
