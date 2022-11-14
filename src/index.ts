@@ -1,18 +1,9 @@
 import "./style.css";
 import { UI } from "peasy-ui";
 
-//globals
-let gameDiv: HTMLElement;
-
 let template = `
 <div id="game" class="gameContainer">
 </div>`;
-
-/**
- *
- *
- *
- */
 
 enum DeviceType {
   IOS = "ios:",
@@ -51,11 +42,11 @@ const resizeScreen = () => {
 };
 
 const init = async () => {
-  resizeScreen();
+  //resizeScreen();
 };
 
 window.addEventListener("load", init, false);
-window.addEventListener("resize", resizeScreen, false);
+//window.addEventListener("resize", resizeScreen, false);
 /* 
 var orientation = (screen.orientation || {}).type || screen.mozOrientation || screen.msOrientation;
 
