@@ -34,19 +34,17 @@ UI.create(document.body, template, model);
 UI.initialize(1000 / 60);
 
 const resizeScreen = () => {
-  document.body.style.width = `${window.innerWidth}px`;
-  document.body.style.height = `${window.innerHeight}px`;
   model.screenwidth = window.innerWidth;
   model.screenheight = window.innerHeight;
   UI.update();
 };
 
 const init = async () => {
-  //resizeScreen();
+  resizeScreen();
 };
 
 window.addEventListener("load", init, false);
-//window.addEventListener("resize", resizeScreen, false);
+window.addEventListener("resize", resizeScreen, false);
 /* 
 var orientation = (screen.orientation || {}).type || screen.mozOrientation || screen.msOrientation;
 
