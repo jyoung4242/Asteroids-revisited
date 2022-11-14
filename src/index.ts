@@ -3,6 +3,7 @@ import { UI } from "peasy-ui";
 
 let template = `
 <div id="game" class="gameContainer">
+  <div class="diagtext">Device Type: \${deviceType}  screen size: Width: \${screenwidth}  Height:  \${screenheight} </div>
 </div>`;
 
 enum DeviceType {

@@ -27,7 +27,7 @@ body {
   overflow: hidden;
 }
 
-span {
+.diagtext {
   color: #dddddd;
 }
 
