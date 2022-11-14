@@ -4,13 +4,14 @@ import { UI } from "peasy-ui";
 //globals
 let gameDiv: HTMLElement;
 
-let template = ``;
+let template = `
+<div id="game" class="gameContainer" style="--screen_width: \${screenwidth}px; --screen_height: \${screenheight}px;">
+</div>`;
 
 /**
- * <div id="game" class="gameContainer" style="--screen_width: \${screenwidth}px; --screen_height: \${screenheight}px;">
-</div>
- * 
- * 
+ *
+ *
+ *
  */
 
 enum DeviceType {

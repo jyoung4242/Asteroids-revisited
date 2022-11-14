@@ -23,8 +23,7 @@ body {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  overflow: hidden;
-  background-image: url("./spacebg.jpg");
+  width: 100vw;
   overflow: hidden;
 }
 
@@ -33,11 +32,11 @@ span {
 }
 
 .gameContainer {
-  position: fixed;
+  position: relative;
   top: 0px;
   left: 0px;
-  width: var(--screen_width);
-  height: var(--screen_height);
+  width: 100%; /*var(--screen_width);*/
+  height: 100%; /*var(--screen_height);*/
   background-image: url("./spacebg.jpg");
   overflow: hidden;
 }
