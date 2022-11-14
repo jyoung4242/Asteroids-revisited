@@ -60,3 +60,5 @@ if (orientation === "landscape-primary") {
 } */
 
 //TODO add in touch listener to enable touch controls
+
+export const add = (): void => {};
