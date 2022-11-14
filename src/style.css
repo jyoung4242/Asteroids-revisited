@@ -24,7 +24,8 @@ body {
   align-items: center;
   height: 100vh;
   overflow: hidden;
-  background-color: black;
+  background-image: url("./spacebg.jpg");
+  overflow: hidden;
 }
 
 span {
