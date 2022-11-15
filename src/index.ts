@@ -1,5 +1,6 @@
 import "./style.css";
 import { UI } from "peasy-ui";
+import { GameState, State } from "./states/gameState";
 
 let template = `
 <div id="game" class="gameContainer">
@@ -12,7 +13,7 @@ enum DeviceType {
   DESKTOP = "desktop",
 }
 
-let model = {
+export let model = {
   logText: "",
   deviceType: DeviceType.IOS,
   screenwidth: 600,
@@ -34,18 +35,35 @@ else model.deviceType = DeviceType.DESKTOP;
 UI.create(document.body, template, model);
 UI.initialize(1000 / 60);
 
-const resizeScreen = () => {
-  model.screenwidth = window.innerWidth;
-  model.screenheight = window.innerHeight;
+const resizeScreen = (m = model) => {
+  m.screenwidth = window.innerWidth;
+  m.screenheight = window.innerHeight;
   UI.update();
 };
 
-const init = async () => {
-  resizeScreen();
+export const init = (m = model) => {
+  resizeScreen(m);
 };
 
-window.addEventListener("load", init, false);
-window.addEventListener("resize", resizeScreen, false);
+function loadEventHandler(e: any) {
+  init();
+}
+function resizeEventHandler(e: any) {
+  resizeScreen();
+}
+
+window.addEventListener("load", loadEventHandler, false);
+window.addEventListener("resize", resizeEventHandler, false);
+
+class TestState extends State {
+  public constructor(name) {
+    super(name);
+  }
+}
+
+const myarray = GameState.create("one", "two", "three", TestState);
+GameState.set("one");
+
 /* 
 var orientation = (screen.orientation || {}).type || screen.mozOrientation || screen.msOrientation;
 
@@ -60,5 +78,3 @@ if (orientation === "landscape-primary") {
 } */
 
 //TODO add in touch listener to enable touch controls
-
-export const add = (): void => {};

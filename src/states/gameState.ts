@@ -10,8 +10,10 @@ class StateMachine {
     for (const entry of entries) {
       if (typeof entry === "string") {
         names.push(entry);
+
         continue;
       }
+
       if (names.length > 0) {
         created.push(
           ...names.map(name => {
@@ -33,6 +35,7 @@ class StateMachine {
       this.states[state.machine][state.name] = state;
       created.push(state);
     }
+
     return created;
   }
 

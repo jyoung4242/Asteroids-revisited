@@ -26,6 +26,7 @@
     "webpack-dev-server": "^4.11.1"
   },
   "dependencies": {
+    "jest-environment-jsdom": "^29.3.1",
     "peasy-lighting": "^0.1.0",
     "peasy-ui": "^0.9.18"
   }
