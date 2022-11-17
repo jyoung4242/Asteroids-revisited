@@ -7,7 +7,7 @@ test("use jsdom in this test file", () => {
   expect(element).not.toBeNull();
 }); */
 
-import { init } from "../index";
+import { GameStates, init } from "../index";
 
 describe("run init routine", () => {
   enum DeviceType {
@@ -17,12 +17,15 @@ describe("run init routine", () => {
   }
 
   let localModel = {
-    logText: "",
     deviceType: DeviceType.IOS,
     screenwidth: 600,
     screenheight: 400,
-    get screenRatio() {
-      return localModel.screenwidth / localModel.screenheight;
+    gamestate: GameStates.MENU,
+    get isGame() {
+      return localModel.gamestate == GameStates.GAME;
+    },
+    get isMenu() {
+      return localModel.gamestate == GameStates.MENU;
     },
   };
 
