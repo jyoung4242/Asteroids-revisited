@@ -40,3 +40,56 @@ body {
   background-image: url("./spacebg.jpg");
   overflow: hidden;
 }
+
+.content {
+  transition: opacity 1.75s ease-in-out;
+}
+
+.content.pui-adding {
+  opacity: 0;
+}
+
+.content.pui-removing {
+  opacity: 0;
+}
+
+.menu {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 80%;
+  height: 80%;
+  border: 3px darkgray solid;
+  border-radius: 3%;
+  transform: translate(-50%, -50%);
+}
+
+.title {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 3vw;
+  color: darkgray;
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.deskopStart {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 2vw;
+  color: darkgray;
+  position: absolute;
+  top: 75%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.mobileStart {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 2vw;
+  color: darkgray;
+  position: absolute;
+  top: 75%;
+  left: 50%;
+  transform: translateX(-50%);
+}

@@ -27,6 +27,9 @@ describe("run init routine", () => {
     get isMenu() {
       return localModel.gamestate == GameStates.MENU;
     },
+    get isMobile() {
+      return localModel.deviceType == DeviceType.IOS || localModel.deviceType == DeviceType.ANDROID;
+    },
   };
 
   it("model screen size should change", () => {

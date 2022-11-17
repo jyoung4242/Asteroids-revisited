@@ -28,12 +28,15 @@ export let model = {
   get isMenu() {
     return model.gamestate == GameStates.MENU;
   },
+  get isMobile() {
+    return model.deviceType == DeviceType.IOS || model.deviceType == DeviceType.ANDROID;
+  },
 };
 
 let template = `
 <div id="game" class="gameContainer">
-  <div class="diagtext">Device Type: \${deviceType}  screen size: Width: \${screenwidth}  Height:  \${screenheight} </div>
   <div class="diagtext">
+    <div class="diagtext">Device Type: \${deviceType}  screen size: Width: \${screenwidth}  Height:  \${screenheight} </div>
     ${PlayState.template}
     ${MenuState.template}
     

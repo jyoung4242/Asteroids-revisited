@@ -3,8 +3,12 @@ import { GameStates, model } from "../index";
 
 export class MenuState extends State {
   static template = `
-  <div \${===isMenu}>  i am in \${gamestate} <div>
-  <p> i will transition to transition in 5 seconds </p>
+  <div class="content menu" \${===isMenu}>
+    <span class="title">ASTEROIDS PLUS 2.0</span>  
+    <span class="deskopStart" \${!==isMobile}>PRESS ANY KEY TO BEGIN</span>
+    <span class="mobileStart" \${===isMobile}>TAP SCREEN TO BEGIN</span>
+    
+  </div>
   `;
   constructor() {
     super("menu");
@@ -26,7 +30,7 @@ export class MenuState extends State {
 
     model.gamestate = GameStates.TRANSITION;
     //mockup timer to change states
-    this.wait(1500);
+    await this.wait(2000);
   }
 
   private wait(ms: number) {

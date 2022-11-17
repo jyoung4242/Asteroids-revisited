@@ -3,8 +3,10 @@ import { GameState, State } from "./gameState";
 
 export class PlayState extends State {
   static template = `
-  <div \${===isGame}>  i am in \${gamestate} <div>
-  <p> i will transition to transition in 5 seconds </p>
+  <div class="content" \${===isGame}>  i am in \${gamestate} 
+    <p> i will transition to menu in 5 seconds </p>
+  </div>
+  
   `;
   constructor() {
     super("game");
@@ -24,7 +26,7 @@ export class PlayState extends State {
     console.log("exiting game");
     model.gamestate = GameStates.TRANSITION;
     //mockup timer to change states
-    this.wait(1500);
+    await this.wait(2000);
   }
 
   private wait(ms: number) {
