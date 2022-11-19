@@ -1,30 +1,34 @@
-import { GameStates, model } from "..";
 import { GameState, State } from "./gameState";
 
+const physicsInterval = 0.24;
+const renderInterval = 0.1667;
+
 export class PlayState extends State {
+  startime: number | undefined = undefined;
+  lasttime: number | undefined = undefined;
+  lastPhysicsUpdate: number = 0;
+  lastRenderUpdate: number = 0;
+
   static template = `
-  <div class="content" \${===isGame}>  i am in \${gamestate} 
-    <p> i will transition to menu in 5 seconds </p>
-  </div>
-  
+  <div class="content" \${===isGame}>i am in \${gamestate}</div>
   `;
+
   constructor() {
     super("game");
   }
   public enter(_previous: State, ...params: any): void {
     console.log("entering game");
-
-    model.gamestate = GameStates.GAME;
-
-    //mockup timer to change states
-    setTimeout(() => {
-      GameState.set("menu");
-    }, 5000);
+    const [model] = params;
+    model.gamestate = "game";
+    console.log(this);
+    //make RAF call to the engine
+    requestAnimationFrame(this.FixedStepEngine);
   }
 
   public async exit(_next: State, ...params: any) {
     console.log("exiting game");
-    model.gamestate = GameStates.TRANSITION;
+    const [model] = params;
+    model.gamestate = "transition";
     //mockup timer to change states
     await this.wait(2000);
   }
@@ -36,4 +40,26 @@ export class PlayState extends State {
       }, ms)
     );
   }
+
+  FixedStepEngine = (timestamp: number) => {
+    if (this.startime == undefined) {
+      this.startime = timestamp;
+      this.lasttime = timestamp;
+    }
+    const deltaTime = (timestamp - this.lasttime) / 1000;
+    this.lastPhysicsUpdate += deltaTime;
+    this.lastRenderUpdate += deltaTime;
+
+    while (this.lastPhysicsUpdate >= physicsInterval) {
+      //update physics here
+      console.log("updating physics");
+      this.lastPhysicsUpdate -= physicsInterval;
+    }
+    while (this.lastRenderUpdate >= renderInterval) {
+      //update rendering here
+      console.log("updating rendering");
+      this.lastRenderUpdate -= renderInterval;
+    }
+    requestAnimationFrame(this.FixedStepEngine);
+  };
 }

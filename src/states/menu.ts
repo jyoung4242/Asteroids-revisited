@@ -1,5 +1,4 @@
 import { GameState, State } from "./gameState";
-import { GameStates, model } from "../index";
 
 export class MenuState extends State {
   static template = `
@@ -16,19 +15,19 @@ export class MenuState extends State {
 
   public enter(_previous: State, ...params: any): void {
     console.log("entering menu");
-
-    model.gamestate = GameStates.MENU;
+    const [model] = params;
+    model.gamestate = "menu";
 
     //mockup timer to change states
     setTimeout(() => {
-      GameState.set("game");
+      GameState.set("game", "default", model);
     }, 5000);
   }
 
   public async exit(_next: State, ...params: any) {
     console.log("exiting menu");
-
-    model.gamestate = GameStates.TRANSITION;
+    const [model] = params;
+    model.gamestate = "transition";
     //mockup timer to change states
     await this.wait(2000);
   }

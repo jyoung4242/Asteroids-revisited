@@ -63,7 +63,7 @@ const resizeScreen = (m = model) => {
 export const init = (m = model) => {
   resizeScreen(m);
   GameState.create(MenuState, PlayState);
-  GameState.set("menu");
+  GameState.set("menu", "default", model);
 };
 
 function loadEventHandler(e: any) {
