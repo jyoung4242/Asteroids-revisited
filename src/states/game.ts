@@ -1,36 +1,57 @@
-import { GameState, State } from "./gameState";
+import { State } from "./gameState";
+import { Player, Asteroid } from "../lib/ecs";
+import { model, GameStates } from "..";
+// Load Chance
+var Chance = require("chance");
+// Instantiate Chance so it can be used
+var chance = new Chance();
 
 const physicsInterval = 0.24;
-const renderInterval = 0.1667;
 
 export class PlayState extends State {
   startime: number | undefined = undefined;
   lasttime: number | undefined = undefined;
   lastPhysicsUpdate: number = 0;
   lastRenderUpdate: number = 0;
+  static running: boolean = false;
+  entities = [];
 
   static template = `
-  <div class="content" \${===isGame}>i am in \${gamestate}</div>
+  <div class="content" \${===isGame}>
+    <div class="\${entity.type}" \${entity<=*entities:id} style="top: \${entity.position.y}px; left: \${entity.position.x}px; width: \${entity.size.x}px; height: \${entity.size.y}px ">
+      <div class="inner" style="rotate: \${entity.angle}deg; background-image:url(\${entity.texture});background-repeat: no-repeat;background-size:cover;">
+      </div>
+    </div>
+  </div>
   `;
 
   constructor() {
     super("game");
   }
   public enter(_previous: State, ...params: any): void {
-    console.log("entering game");
     const [model] = params;
-    model.gamestate = "game";
-    console.log(this);
+    model.gamestate = GameStates.GAME;
+    model.entities = [];
+
+    model.entities.push(new Player(model.screenwidth, model.screenheight));
+    //get random # of asteroids
+    const numAsteroids = chance.integer({ min: 1, max: 8 });
+    for (let i = 1; i <= numAsteroids; i++) {
+      model.entities.push(new Asteroid(model.screenwidth, model.screenheight));
+    }
+    console.log(model.entities);
+
     //make RAF call to the engine
+    PlayState.running = true;
     requestAnimationFrame(this.FixedStepEngine);
   }
 
   public async exit(_next: State, ...params: any) {
     console.log("exiting game");
+    PlayState.running = false;
     const [model] = params;
     model.gamestate = "transition";
     //mockup timer to change states
-    await this.wait(2000);
   }
 
   private wait(ms: number) {
@@ -52,14 +73,12 @@ export class PlayState extends State {
 
     while (this.lastPhysicsUpdate >= physicsInterval) {
       //update physics here
-      console.log("updating physics");
+      model.entities.forEach(ent => {
+        ent.update();
+      });
       this.lastPhysicsUpdate -= physicsInterval;
     }
-    while (this.lastRenderUpdate >= renderInterval) {
-      //update rendering here
-      console.log("updating rendering");
-      this.lastRenderUpdate -= renderInterval;
-    }
-    requestAnimationFrame(this.FixedStepEngine);
+
+    if (PlayState.running) requestAnimationFrame(this.FixedStepEngine);
   };
 }

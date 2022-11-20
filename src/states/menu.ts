@@ -1,4 +1,5 @@
 import { GameState, State } from "./gameState";
+import { GameStates } from "..";
 
 export class MenuState extends State {
   static template = `
@@ -6,18 +7,16 @@ export class MenuState extends State {
     <span class="title">ASTEROIDS PLUS 2.0</span>  
     <span class="deskopStart" \${!==isMobile}>PRESS ANY KEY TO BEGIN</span>
     <span class="mobileStart" \${===isMobile}>TAP SCREEN TO BEGIN</span>
-    
-  </div>
+   </div>
   `;
   constructor() {
     super("menu");
   }
 
   public enter(_previous: State, ...params: any): void {
-    console.log("entering menu");
     const [model] = params;
-    model.gamestate = "menu";
-
+    model.gamestate = GameStates.MENU;
+    console.log("in menu");
     //mockup timer to change states
     setTimeout(() => {
       GameState.set("game", "default", model);
@@ -25,7 +24,6 @@ export class MenuState extends State {
   }
 
   public async exit(_next: State, ...params: any) {
-    console.log("exiting menu");
     const [model] = params;
     model.gamestate = "transition";
     //mockup timer to change states

@@ -31,16 +31,13 @@ export let model = {
   get isMobile() {
     return model.deviceType == DeviceType.IOS || model.deviceType == DeviceType.ANDROID;
   },
+  entities: [],
 };
 
 let template = `
 <div id="game" class="gameContainer">
-  <div class="diagtext">
-    <div class="diagtext">Device Type: \${deviceType}  screen size: Width: \${screenwidth}  Height:  \${screenheight} </div>
-    ${PlayState.template}
-    ${MenuState.template}
-    
-  </div>
+  ${MenuState.template}    
+  ${PlayState.template}
 </div>`;
 
 // we need to sniff out Android and iOS

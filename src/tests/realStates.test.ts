@@ -1,7 +1,6 @@
 import { GameState } from "../states/gameState";
 import { MenuState } from "../states/menu";
 import { PlayState } from "../states/game";
-import { GameStates } from "../index";
 
 function wait(ms: number) {
   return new Promise<void>(resolve =>
@@ -21,30 +20,38 @@ let localModel = {
   deviceType: DeviceType.IOS,
   screenwidth: 600,
   screenheight: 400,
-  gamestate: GameStates.MENU,
+  gamestate: "menu",
   get isGame() {
-    return localModel.gamestate == GameStates.GAME;
+    return localModel.gamestate == "game";
   },
   get isMenu() {
-    return localModel.gamestate == GameStates.MENU;
+    return localModel.gamestate == "menu";
   },
   get isMobile() {
     return localModel.deviceType == DeviceType.IOS || localModel.deviceType == DeviceType.ANDROID;
   },
 };
 
-jest.setTimeout(20000);
+jest.setTimeout(10000);
 describe("Check Both States", () => {
   it("create states", () => {
     GameState.create(MenuState, PlayState);
     expect(GameState.get()).toMatchObject({ state: undefined });
   });
-  it("set states", async () => {
+  it("set states", () => {
     GameState.set("menu", "default", localModel);
     expect(GameState.get()).toMatchObject({ state: { machine: "default", name: "menu" } });
-    await wait(7500);
-    expect(GameState.get()).toMatchObject({ state: { machine: "default", name: "game" } });
-    await wait(7500);
+  });
+
+  it("next state", () => {
+    setTimeout(() => {
+      expect(GameState.get()).toMatchObject({ state: { machine: "default", name: "game" } });
+    }, 5000);
+  });
+
+  it("final switch", () => {
+    GameState.set("game", "default", localModel);
+    GameState.set("menu", "default", localModel);
     expect(GameState.get()).toMatchObject({ state: { machine: "default", name: "menu" } });
   });
 });

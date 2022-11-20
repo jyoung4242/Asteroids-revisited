@@ -93,3 +93,18 @@ body {
   left: 50%;
   transform: translateX(-50%);
 }
+
+.PLAYER {
+  position: fixed;
+  border: 1px red solid;
+}
+
+.inner {
+  width: 100%;
+  height: 100%;
+}
+
+.ASTEROID {
+  position: fixed;
+  border: 1px silver solid;
+}

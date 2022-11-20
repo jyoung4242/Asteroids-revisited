@@ -30,6 +30,7 @@ describe("run init routine", () => {
     get isMobile() {
       return localModel.deviceType == DeviceType.IOS || localModel.deviceType == DeviceType.ANDROID;
     },
+    entities: [],
   };
 
   it("model screen size should change", () => {
