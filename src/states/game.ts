@@ -40,7 +40,7 @@ export class PlayState extends State {
     //*****************************
     //Set up game controls touch/keyboard
 
-    model.joystick.w = 0.15 * model.screenwidth;
+    model.joystick.w = 0.175 * model.screenwidth;
     model.joystick.h = model.joystick.w;
 
     model.joystick.x = 50;
