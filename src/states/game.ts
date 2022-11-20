@@ -23,7 +23,7 @@ export class PlayState extends State {
       </div>
     </div>
 
-    <div class="joystick" \${!==isMobile} style="width:\${joystick.w}px;height:\${joystick.h}px; top: \${joystick.y}px; left:\${joystick.x}px">
+    <div class="joystick" \${===isMobile} style="width:\${joystick.w}px;height:\${joystick.h}px; top: \${joystick.y}px; left:\${joystick.x}px">
       <div id="joydiv" class="inner" ></div>
     </div>
 
