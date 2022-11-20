@@ -32,6 +32,16 @@ export let model = {
     return model.deviceType == DeviceType.IOS || model.deviceType == DeviceType.ANDROID;
   },
   entities: [],
+  joystick: {
+    x: 25,
+    y: 400,
+    w: 50,
+    h: 50,
+    color: "white",
+  },
+  get joyDir() {
+    return true;
+  },
 };
 
 let template = `

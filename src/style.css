@@ -108,3 +108,8 @@ body {
   position: fixed;
   border: 1px silver solid;
 }
+
+.joystick {
+  position: fixed;
+  border: 1px solid yellow;
+}

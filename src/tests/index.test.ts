@@ -31,6 +31,16 @@ describe("run init routine", () => {
       return localModel.deviceType == DeviceType.IOS || localModel.deviceType == DeviceType.ANDROID;
     },
     entities: [],
+    joystick: {
+      x: 0,
+      y: 0,
+      w: 50,
+      h: 50,
+      color: "white",
+    },
+    get joyDir() {
+      return true;
+    },
   };
 
   it("model screen size should change", () => {

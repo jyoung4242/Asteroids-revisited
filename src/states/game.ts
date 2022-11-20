@@ -22,6 +22,11 @@ export class PlayState extends State {
       <div class="inner" style="rotate: \${entity.angle}deg; background-image:url(\${entity.texture});background-repeat: no-repeat;background-size:cover;">
       </div>
     </div>
+
+    <div class="joystick" \${!==isMobile} style="width:\${joystick.w}px;height:\${joystick.h}px; top: \${joystick.y}px; left:\${joystick.x}px">
+      <div id="joydiv" class="inner" ></div>
+    </div>
+
   </div>
   `;
 
@@ -31,8 +36,19 @@ export class PlayState extends State {
   public enter(_previous: State, ...params: any): void {
     const [model] = params;
     model.gamestate = GameStates.GAME;
-    model.entities = [];
 
+    //*****************************
+    //Set up game controls touch/keyboard
+
+    model.joystick.w = 0.15 * model.screenwidth;
+    model.joystick.h = model.joystick.w;
+
+    model.joystick.x = 50;
+    model.joystick.y = model.screenheight - model.joystick.h - 50;
+
+    //*****************************
+    //Set up game entities
+    model.entities = [];
     model.entities.push(new Player(model.screenwidth, model.screenheight));
     //get random # of asteroids
     const numAsteroids = chance.integer({ min: 1, max: 8 });
@@ -41,6 +57,7 @@ export class PlayState extends State {
     }
     console.log(model.entities);
 
+    //*****************************
     //make RAF call to the engine
     PlayState.running = true;
     requestAnimationFrame(this.FixedStepEngine);
