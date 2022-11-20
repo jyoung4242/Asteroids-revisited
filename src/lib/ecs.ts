@@ -62,8 +62,8 @@ export class Player extends Entity {
     this.exp = 0;
     this.lives = 3;
     let tempSize = 0;
-    if (screenw <= screenh) tempSize = screenw / 15;
-    else tempSize = screenh / 15;
+    if (screenw <= screenh) tempSize = screenw / 13;
+    else tempSize = screenh / 13;
     this.size.add({ x: tempSize, y: tempSize }, true);
     this.position.add({ x: screenw / 2 - tempSize / 2, y: screenh / 2 - tempSize / 2 }, true);
   }
