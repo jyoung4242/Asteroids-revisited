@@ -20,7 +20,7 @@ export class MenuState extends State {
     //mockup timer to change states
     setTimeout(() => {
       GameState.set("game", "default", model);
-    }, 5000);
+    }, 2000);
   }
 
   public async exit(_next: State, ...params: any) {

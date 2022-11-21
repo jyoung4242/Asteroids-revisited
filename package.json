@@ -28,6 +28,7 @@
   "dependencies": {
     "chance": "^1.1.9",
     "jest-environment-jsdom": "^29.3.1",
+    "peasy-input": "^0.1.0",
     "peasy-lighting": "^0.1.0",
     "peasy-ui": "^0.9.18",
     "uuid": "^9.0.0"

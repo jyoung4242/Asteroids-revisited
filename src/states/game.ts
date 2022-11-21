@@ -1,6 +1,8 @@
 import { State } from "./gameState";
 import { Player, Asteroid } from "../lib/ecs";
 import { model, GameStates } from "..";
+import { Input } from "peasy-input";
+
 // Load Chance
 var Chance = require("chance");
 // Instantiate Chance so it can be used
@@ -15,6 +17,7 @@ export class PlayState extends State {
   lastRenderUpdate: number = 0;
   static running: boolean = false;
   entities = [];
+  mapping: any = undefined;
 
   static template = `
   <div class="content" \${===isGame}>
@@ -23,28 +26,31 @@ export class PlayState extends State {
       </div>
     </div>
 
-    <div class="joystick" \${===isMobile} style="width:\${joystick.w}px;height:\${joystick.h}px; top: \${joystick.y}px; left:\${joystick.x}px">
-      <div id="joydiv" class="inner" ></div>
+    <div class="joystick" \${===isMobile}>
+        <div class="js_rel_cont">
+            <div class="knob"
+                \${==>joystick.knob}
+                \${touchstart@=>joystick.start}
+                \${touchmove@=>joystick.move}
+                \${touchend@=>joystick.end}
+                \${touchcancel@=>joystick.cancel}
+            ></div>    
+        </div>
     </div>
 
+    <div class="buttonDiv" \${===isMobile}>
+        <div class="but_rel" \${pointerdown@=>fire} \${pointerup@=>stopfiring}></div>
+    </div>
   </div>
   `;
 
   constructor() {
     super("game");
   }
+
   public enter(_previous: State, ...params: any): void {
     const [model] = params;
     model.gamestate = GameStates.GAME;
-
-    //*****************************
-    //Set up game controls touch/keyboard
-
-    model.joystick.w = 0.175 * model.screenwidth;
-    model.joystick.h = model.joystick.w;
-
-    model.joystick.x = 50;
-    model.joystick.y = model.screenheight - model.joystick.h - 50;
 
     //*****************************
     //Set up game entities
@@ -55,7 +61,54 @@ export class PlayState extends State {
     for (let i = 1; i <= numAsteroids; i++) {
       model.entities.push(new Asteroid(model.screenwidth, model.screenheight));
     }
-    console.log(model.entities);
+
+    this.mapping = Input.map(
+      {
+        ArrowLeft: { action: "left", repeat: true },
+        ArrowRight: { action: "right", repeat: true },
+        ArrowUp: { action: "up", repeat: true },
+        ArrowDown: { action: "down", repeat: true },
+        w: { action: "up", repeat: true },
+        a: { action: "left", repeat: true },
+        s: { action: "down", repeat: true },
+        d: { action: "right", repeat: true },
+        Enter: { action: "fire", repeat: true },
+        Shift: { action: "fire", repeat: true },
+      },
+      (action: string, doing: boolean) => {
+        if (doing) {
+          switch (action) {
+            case "left":
+              model.keypresses.direction = "LEFT";
+              console.log("left key");
+              break;
+            case "right":
+              model.keypresses.direction = "RIGHT";
+              console.log("right key");
+              break;
+            case "up":
+              model.keypresses.direction = "UP";
+              console.log("up key");
+              break;
+            case "down":
+              model.keypresses.direction = "DOWN";
+              console.log("down key");
+              break;
+            case "fire":
+              model.keypresses.fire = "FIRE";
+              console.log("fire key");
+              break;
+            default:
+              model.keypresses.direction = "NONE";
+              model.keypresses.fire = "NONE";
+              break;
+          }
+        } else {
+          model.keypresses.direction = "NONE";
+          model.keypresses.fire = "NONE";
+        }
+      }
+    );
 
     //*****************************
     //make RAF call to the engine
