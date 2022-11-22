@@ -83,10 +83,10 @@ export class Player extends Entity {
   }
   fire() {}
   turnLeft() {
-    this.angle -= 1.5;
+    this.angle -= 2;
   }
   turnRight() {
-    this.angle += 1.5;
+    this.angle += 2;
   }
   accelerate() {
     this.thrust = true;
