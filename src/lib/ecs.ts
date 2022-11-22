@@ -97,7 +97,6 @@ export class Player extends Entity {
   }
 
   update(updatetime: number) {
-    console.log(updatetime);
     //set thrust
     if (this.thrust) {
       console.log("update: ", updatetime);

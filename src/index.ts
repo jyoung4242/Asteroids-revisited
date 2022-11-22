@@ -144,6 +144,7 @@ export const init = (m = model) => {
 function loadEventHandler(e: any) {
   init();
 }
+
 function resizeEventHandler(e: any) {
   resizeScreen();
 }

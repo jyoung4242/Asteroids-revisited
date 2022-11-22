@@ -24,6 +24,7 @@ export class PlayState extends State {
     <p>Player Position: \${entities[0].position.x} \${entities[0].position.y}</p>
     <p>Player Angle: \${entities[0].angle}</p>
     <p>Player Velocity: \${entities[0].velocity.x} \${entities[0].velocity.y}</p>
+    <p>Joystick Dir: \${joystick.dir  }
     <div class="\${entity.type}" \${entity<=*entities:id} style="top: \${entity.position.y}px; left: \${entity.position.x}px; width: \${entity.size.x}px; height: \${entity.size.y}px ">
       <div class="inner" style="rotate: \${entity.angle}deg; background-image:url(\${entity.texture});background-repeat: no-repeat;background-size:cover;">
       </div>
@@ -154,7 +155,7 @@ export class PlayState extends State {
         model.entities[0].turnRight();
       if (model.joystick.dir == "NE" || model.joystick.dir == "N" || model.joystick.dir == "NW")
         model.entities[0].accelerate();
-      if ((model.joystick.dir = "NA")) model.entities[0].decelerate();
+      if (model.joystick.dir == "NA") model.entities[0].decelerate();
     } else if (!model.isMobile && model.entities[0]) {
       //keyboard input
       if (model.keypresses.direction == "LEFT") model.entities[0].turnLeft();
