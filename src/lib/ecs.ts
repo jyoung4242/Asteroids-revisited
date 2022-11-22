@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import { model } from "..";
 // Load Chance
 var Chance = require("chance");
 // Instantiate Chance so it can be used
@@ -28,6 +29,14 @@ export class Vector {
     vector.y *= deltaVector.y;
     return vector;
   }
+  angle2rad(angle: number): number {
+    return angle * (Math.PI / 180);
+  }
+
+  setPolar(magnitude: number, angle: number) {
+    this.x = magnitude * Math.cos(this.angle2rad(angle));
+    this.y = magnitude * Math.sin(this.angle2rad(angle));
+  }
 }
 
 class Entity {
@@ -35,7 +44,7 @@ class Entity {
   size: Vector = new Vector(0, 0);
   velocity: Vector = new Vector(0, 0);
   angle: number = 0;
-  speed: number = 0;
+  speed: Vector = new Vector(0, 0);
   type: string;
   id: string;
   name: string;
@@ -47,7 +56,7 @@ class Entity {
     this.id = uuidv4();
   }
 
-  update() {}
+  update(deltatime: number) {}
 }
 
 export class Player extends Entity {
@@ -55,6 +64,9 @@ export class Player extends Entity {
   exp: number;
   lives: number;
   texture: string = plr;
+  travelAngle: number;
+  thrust: boolean;
+
   constructor(screenw: number, screenh: number) {
     super("Player");
     this.type = "PLAYER";
@@ -62,18 +74,50 @@ export class Player extends Entity {
     this.exp = 0;
     this.lives = 3;
     let tempSize = 0;
+    this.travelAngle = 0;
+    this.thrust = false;
     if (screenw <= screenh) tempSize = screenw / 13;
     else tempSize = screenh / 13;
     this.size.add({ x: tempSize, y: tempSize }, true);
     this.position.add({ x: screenw / 2 - tempSize / 2, y: screenh / 2 - tempSize / 2 }, true);
   }
-
-  turnLeft() {}
-  turnRight() {}
-  accelerate() {}
-  decelerate() {}
   fire() {}
-  update() {}
+  turnLeft() {
+    this.angle -= 1.5;
+  }
+  turnRight() {
+    this.angle += 1.5;
+  }
+  accelerate() {
+    this.thrust = true;
+    this.travelAngle = this.angle;
+  }
+  decelerate() {
+    this.thrust = false;
+  }
+
+  update(updatetime: number) {
+    console.log(updatetime);
+    //set thrust
+    if (this.thrust) {
+      console.log("update: ", updatetime);
+      this.velocity.x += Math.cos(this.angle2rad(this.travelAngle)) * updatetime * 125;
+      this.velocity.y += Math.sin(this.angle2rad(this.travelAngle)) * updatetime * 125;
+    }
+
+    this.position.x += this.velocity.x * updatetime;
+    this.position.y += this.velocity.y * updatetime;
+
+    //check for screen collision
+    if (this.position.x > model.screenwidth) this.position.x = -10;
+    if (this.position.x < -11) this.position.x = model.screenwidth - 20;
+    if (this.position.y < -11) this.position.y = model.screenheight - 20;
+    if (this.position.y > model.screenheight) this.position.y = -10;
+  }
+
+  angle2rad(angle: number): number {
+    return angle * (Math.PI / 180);
+  }
 }
 
 export class Asteroid extends Entity {
@@ -96,7 +140,7 @@ export class Asteroid extends Entity {
   }
 
   spawn() {}
-  update() {}
+  update(deltatime: number) {}
 }
 
 class Bullet extends Entity {

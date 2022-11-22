@@ -43,6 +43,7 @@ body {
 
 .content {
   transition: opacity 1.75s ease-in-out;
+  color: white;
 }
 
 .content.pui-adding {
@@ -96,7 +97,9 @@ body {
 
 .PLAYER {
   position: fixed;
-  border: 1px red solid;
+  /* border: 1px red solid;
+  border-radius: 50%; */
+  transform: rotate(-90deg);
 }
 
 .inner {
@@ -111,7 +114,7 @@ body {
 
 .joystick {
   position: fixed;
-  top: 210px;
+  bottom: 10px;
   left: 10px;
   width: 200px;
   height: 200px;

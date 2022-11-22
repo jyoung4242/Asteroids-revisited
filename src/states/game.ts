@@ -8,7 +8,7 @@ var Chance = require("chance");
 // Instantiate Chance so it can be used
 var chance = new Chance();
 
-const physicsInterval = 0.24;
+const physicsInterval = 0.024;
 
 export class PlayState extends State {
   startime: number | undefined = undefined;
@@ -21,6 +21,9 @@ export class PlayState extends State {
 
   static template = `
   <div class="content" \${===isGame}>
+    <p>Player Position: \${entities[0].position.x} \${entities[0].position.y}</p>
+    <p>Player Angle: \${entities[0].angle}</p>
+    <p>Player Velocity: \${entities[0].velocity.x} \${entities[0].velocity.y}</p>
     <div class="\${entity.type}" \${entity<=*entities:id} style="top: \${entity.position.y}px; left: \${entity.position.x}px; width: \${entity.size.x}px; height: \${entity.size.y}px ">
       <div class="inner" style="rotate: \${entity.angle}deg; background-image:url(\${entity.texture});background-repeat: no-repeat;background-size:cover;">
       </div>
@@ -138,13 +141,34 @@ export class PlayState extends State {
       this.lasttime = timestamp;
     }
     const deltaTime = (timestamp - this.lasttime) / 1000;
+    this.lasttime = timestamp;
     this.lastPhysicsUpdate += deltaTime;
     this.lastRenderUpdate += deltaTime;
+
+    //check for input
+    if (model.isMobile && model.entities[0]) {
+      //touch controls
+      if (model.joystick.dir == "NW" || model.joystick.dir == "W" || model.joystick.dir == "SW")
+        model.entities[0].turnLeft();
+      if (model.joystick.dir == "NE" || model.joystick.dir == "E" || model.joystick.dir == "SE")
+        model.entities[0].turnRight();
+      if (model.joystick.dir == "NE" || model.joystick.dir == "N" || model.joystick.dir == "NW")
+        model.entities[0].accelerate();
+      if ((model.joystick.dir = "NA")) model.entities[0].decelerate();
+    } else if (!model.isMobile && model.entities[0]) {
+      //keyboard input
+      if (model.keypresses.direction == "LEFT") model.entities[0].turnLeft();
+      if (model.keypresses.direction == "RIGHT") model.entities[0].turnRight();
+      if (model.keypresses.direction == "UP") model.entities[0].accelerate();
+      if (model.keypresses.direction == "NONE") model.entities[0].decelerate();
+
+      if (model.keypresses.direction == "FIRE") model.entities[0].fire();
+    }
 
     while (this.lastPhysicsUpdate >= physicsInterval) {
       //update physics here
       model.entities.forEach(ent => {
-        ent.update();
+        ent.update(this.lastPhysicsUpdate);
       });
       this.lastPhysicsUpdate -= physicsInterval;
     }

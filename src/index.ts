@@ -85,7 +85,7 @@ export let model = {
     knob: <any>undefined,
     mag: "0",
     angle: "0",
-    dir: "N",
+    dir: "NA",
   },
   keypresses: {
     fire: "NONE",
