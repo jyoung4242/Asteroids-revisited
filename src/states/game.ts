@@ -6,7 +6,7 @@ import { Input } from "peasy-input";
 // Load Chance
 var Chance = require("chance");
 // Instantiate Chance so it can be used
-var chance = new Chance();
+export var chance = new Chance();
 
 const physicsInterval = 0.024;
 
@@ -151,12 +151,15 @@ export class PlayState extends State {
         model.entities[0].turnRight();
       if (model.joystick.dir == "NE" || model.joystick.dir == "N" || model.joystick.dir == "NW")
         model.entities[0].accelerate();
+      if (model.joystick.dir == "SE" || model.joystick.dir == "S" || model.joystick.dir == "SW") model.entities[0].reverse();
+
       if (model.joystick.dir == "NA") model.entities[0].decelerate();
     } else if (!model.isMobile && model.entities[0]) {
       //keyboard input
       if (model.keypresses.direction == "LEFT") model.entities[0].turnLeft();
       if (model.keypresses.direction == "RIGHT") model.entities[0].turnRight();
       if (model.keypresses.direction == "UP") model.entities[0].accelerate();
+      if (model.keypresses.direction == "DOWN") model.entities[0].reverse();
       if (model.keypresses.direction == "NONE") model.entities[0].decelerate();
 
       if (model.keypresses.direction == "FIRE") model.entities[0].fire();

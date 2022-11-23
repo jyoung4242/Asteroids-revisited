@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import { model } from "..";
+
 // Load Chance
 var Chance = require("chance");
 // Instantiate Chance so it can be used
@@ -66,6 +67,7 @@ export class Player extends Entity {
   texture: string = plr;
   travelAngle: number;
   thrust: boolean;
+  reverseThrust: boolean;
 
   constructor(screenw: number, screenh: number) {
     super("Player");
@@ -76,6 +78,7 @@ export class Player extends Entity {
     let tempSize = 0;
     this.travelAngle = 0;
     this.thrust = false;
+    this.reverseThrust = false;
     if (screenw <= screenh) tempSize = screenw / 13;
     else tempSize = screenh / 13;
     this.size.add({ x: tempSize, y: tempSize }, true);
@@ -94,14 +97,21 @@ export class Player extends Entity {
   }
   decelerate() {
     this.thrust = false;
+    this.reverseThrust = false;
   }
-
+  reverse() {
+    this.reverseThrust = true;
+    this.travelAngle = this.angle;
+  }
   update(updatetime: number) {
     //set thrust
     if (this.thrust) {
-      console.log("update: ", updatetime);
       this.velocity.x += Math.cos(this.angle2rad(this.travelAngle)) * updatetime * 125;
       this.velocity.y += Math.sin(this.angle2rad(this.travelAngle)) * updatetime * 125;
+    }
+    if (this.reverseThrust) {
+      this.velocity.x -= Math.cos(this.angle2rad(this.travelAngle)) * updatetime * 125;
+      this.velocity.y -= Math.sin(this.angle2rad(this.travelAngle)) * updatetime * 125;
     }
 
     this.position.x += this.velocity.x * updatetime;
@@ -136,10 +146,21 @@ export class Asteroid extends Entity {
 
     this.size.add({ x: aSize, y: aSize }, true);
     this.position.add({ x: tempX, y: tempY }, true);
+    this.velocity.x = chance.integer({ min: -5, max: 5 });
+    this.velocity.y = chance.integer({ min: -5, max: 5 });
   }
 
   spawn() {}
-  update(deltatime: number) {}
+  update(deltatime: number) {
+    this.position.x += this.velocity.x;
+    this.position.y += this.velocity.y;
+
+    //check for screen collision
+    if (this.position.x > model.screenwidth) this.position.x = -10;
+    if (this.position.x < -11) this.position.x = model.screenwidth - 20;
+    if (this.position.y < -11) this.position.y = model.screenheight - 20;
+    if (this.position.y > model.screenheight) this.position.y = -10;
+  }
 }
 
 class Bullet extends Entity {
