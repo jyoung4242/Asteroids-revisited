@@ -20,6 +20,7 @@ export enum GameStates {
 }
 
 export let model = {
+  fps: "",
   deviceType: DeviceType.IOS,
   screenwidth: 600,
   screenheight: 400,

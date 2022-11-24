@@ -8,7 +8,7 @@ var Chance = require("chance");
 // Instantiate Chance so it can be used
 export var chance = new Chance();
 
-const physicsInterval = 0.024;
+const physicsInterval = 0.016;
 
 export class PlayState extends State {
   startime: number | undefined = undefined;
@@ -21,8 +21,9 @@ export class PlayState extends State {
 
   static template = `
   <div class="content" \${===isGame}>
+    <span>FPS: \${fps}</span>
     <div class="\${entity.type}" \${entity<=*entities:id} style="top: \${entity.position.y}px; left: \${entity.position.x}px; width: \${entity.size.x}px; height: \${entity.size.y}px ">
-      <div class="inner" style="rotate: \${entity.angle}deg; background-image:url(\${entity.texture});background-repeat: no-repeat;background-size:cover;">
+      <div class="inner" style="rotate: \${entity.angle}deg; background-image:url(\${entity.texture});background-position: \${entity.ssPosition};background-size:\${entity.textureSize};">
       </div>
     </div>
 
@@ -138,6 +139,7 @@ export class PlayState extends State {
       this.lasttime = timestamp;
     }
     const deltaTime = (timestamp - this.lasttime) / 1000;
+    model.fps = (1 / deltaTime).toFixed(2);
     this.lasttime = timestamp;
     this.lastPhysicsUpdate += deltaTime;
     this.lastRenderUpdate += deltaTime;

@@ -28,6 +28,7 @@ describe("run init routine", () => {
     else if (angle <= 0 && angle > -67.5) return "SE";
   };
   let localModel = {
+    fps: "",
     deviceType: DeviceType.IOS,
     screenwidth: 600,
     screenheight: 400,

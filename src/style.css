@@ -105,11 +105,12 @@ body {
 .inner {
   width: 100%;
   height: 100%;
+  background-repeat: no-repeat;
 }
 
 .ASTEROID {
   position: fixed;
-  border: 1px silver solid;
+  /* border: 1px silver solid; */
 }
 
 .joystick {
