@@ -8,6 +8,7 @@ test("use jsdom in this test file", () => {
 }); */
 
 import { GameStates, init } from "../index";
+import { Vector } from "../lib/ecs";
 
 describe("run init routine", () => {
   enum DeviceType {
@@ -28,6 +29,11 @@ describe("run init routine", () => {
     else if (angle <= 0 && angle > -67.5) return "SE";
   };
   let localModel = {
+    lives: 3,
+    health: 25,
+    exp: 0,
+    gameLevel: 1,
+    score: 0,
     fps: "",
     deviceType: DeviceType.IOS,
     screenwidth: 600,
@@ -38,6 +44,22 @@ describe("run init routine", () => {
     },
     get isMenu() {
       return localModel.gamestate == GameStates.MENU;
+    },
+    get spawnPoint1() {
+      let cpX = localModel.entities[0].position.x + localModel.entities[0].size.x / 2;
+      let cpY = localModel.entities[0].position.y + localModel.entities[0].size.y / 2;
+      let radius = localModel.entities[0].size.x / 2;
+      let sx = radius * Math.cos(Vector.angle2rad(localModel.entities[0].angle + 10));
+      let sy = radius * Math.sin(Vector.angle2rad(localModel.entities[0].angle + 10));
+      return new Vector(cpX + sx, cpY + sy);
+    },
+    get spawnPoint2() {
+      let cpX = localModel.entities[0].position.x + localModel.entities[0].size.x / 2;
+      let cpY = localModel.entities[0].position.y + localModel.entities[0].size.y / 2;
+      let radius = localModel.entities[0].size.x / 2;
+      let sx = radius * Math.cos(Vector.angle2rad(localModel.entities[0].angle - 10));
+      let sy = radius * Math.sin(Vector.angle2rad(localModel.entities[0].angle - 10));
+      return new Vector(cpX + sx, cpY + sy);
     },
     get isMobile() {
       return localModel.deviceType == DeviceType.IOS || localModel.deviceType == DeviceType.ANDROID;

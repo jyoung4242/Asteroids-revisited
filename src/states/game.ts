@@ -1,12 +1,48 @@
 import { State } from "./gameState";
 import { Player, Asteroid } from "../lib/ecs";
 import { model, GameStates } from "..";
-import { Input } from "peasy-input";
+import { Input } from "@peasy-lib/peasy-input";
+//import { Lighting, Vector, Light } from "@peasy-lib/peasy-lighting";
 
 // Load Chance
-var Chance = require("chance");
+let Chance = require("chance");
 // Instantiate Chance so it can be used
 export var chance = new Chance();
+
+export enum HUDparameters {
+  SCORE,
+  EXPERIENCE,
+  LEVEL,
+  LIVES,
+  HEALTH,
+}
+
+//Level progression and spawn rate
+let spawnRate = 7.5;
+let spawnTimer = 0;
+
+export const updateHudData = (param: HUDparameters, incValue: number) => {
+  switch (param) {
+    case HUDparameters.SCORE:
+      model.score += incValue;
+      break;
+    case HUDparameters.EXPERIENCE:
+      model.exp += incValue;
+      //leveling up and changin parameters
+      if (model.exp >= 100) {
+        model.gameLevel += 1;
+        spawnRate *= 0.95;
+        model.exp = 0;
+      }
+      break;
+    case HUDparameters.LIVES:
+      model.lives += incValue;
+      break;
+    case HUDparameters.HEALTH:
+      model.health += incValue;
+      break;
+  }
+};
 
 const physicsInterval = 0.016;
 
@@ -18,10 +54,11 @@ export class PlayState extends State {
   static running: boolean = false;
   entities = [];
   mapping: any = undefined;
+  firelatch: boolean = false;
 
   static template = `
   <div class="content" \${===isGame}>
-    <span>FPS: \${fps}</span>
+    <span>FPS: \${fps}</span><span>   Game Level: \${gameLevel}   </span>  <span>   Experience: \${exp}   </span><span>  Score: \${score}</span><span>  Health: \${health}</span><span>  Lives: \${lives}</span>
     <div class="\${entity.type}" \${entity<=*entities:id} style="top: \${entity.position.y}px; left: \${entity.position.x}px; width: \${entity.size.x}px; height: \${entity.size.y}px ">
       <div class="inner" style="rotate: \${entity.angle}deg; background-image:url(\${entity.texture});background-position: \${entity.ssPosition};background-size:\${entity.textureSize};">
       </div>
@@ -57,11 +94,6 @@ export class PlayState extends State {
     //Set up game entities
     model.entities = [];
     model.entities.push(new Player(model.screenwidth, model.screenheight));
-    //get random # of asteroids
-    const numAsteroids = chance.integer({ min: 1, max: 8 });
-    for (let i = 1; i <= numAsteroids; i++) {
-      model.entities.push(new Asteroid(model.screenwidth, model.screenheight));
-    }
 
     this.mapping = Input.map(
       {
@@ -73,31 +105,26 @@ export class PlayState extends State {
         a: { action: "left", repeat: true },
         s: { action: "down", repeat: true },
         d: { action: "right", repeat: true },
-        Enter: { action: "fire", repeat: true },
-        Shift: { action: "fire", repeat: true },
+        Enter: { action: "fire", repeat: false },
+        Shift: { action: "fire", repeat: false },
       },
       (action: string, doing: boolean) => {
         if (doing) {
           switch (action) {
             case "left":
               model.keypresses.direction = "LEFT";
-              console.log("left key");
               break;
             case "right":
               model.keypresses.direction = "RIGHT";
-              console.log("right key");
               break;
             case "up":
               model.keypresses.direction = "UP";
-              console.log("up key");
               break;
             case "down":
               model.keypresses.direction = "DOWN";
-              console.log("down key");
               break;
             case "fire":
               model.keypresses.fire = "FIRE";
-              console.log("fire key");
               break;
             default:
               model.keypresses.direction = "NONE";
@@ -122,7 +149,9 @@ export class PlayState extends State {
     PlayState.running = false;
     const [model] = params;
     model.gamestate = "transition";
-    //mockup timer to change states
+
+    //this manages keyboard inputs
+    this.mapping.unmap();
   }
 
   private wait(ms: number) {
@@ -143,6 +172,7 @@ export class PlayState extends State {
     this.lasttime = timestamp;
     this.lastPhysicsUpdate += deltaTime;
     this.lastRenderUpdate += deltaTime;
+    spawnTimer += deltaTime;
 
     //check for input
     if (model.isMobile && model.entities[0]) {
@@ -164,7 +194,19 @@ export class PlayState extends State {
       if (model.keypresses.direction == "DOWN") model.entities[0].reverse();
       if (model.keypresses.direction == "NONE") model.entities[0].decelerate();
 
-      if (model.keypresses.direction == "FIRE") model.entities[0].fire();
+      if (model.keypresses.fire == "FIRE" && !this.firelatch) {
+        model.entities[0].fire();
+        this.firelatch = true;
+      } else if (model.keypresses.fire == "NONE" && this.firelatch) {
+        this.firelatch = false;
+      }
+    }
+
+    //generate new Asteroid
+    if (spawnTimer >= spawnRate) {
+      console.log("spawning");
+      spawnTimer = 0;
+      Asteroid.spawn();
     }
 
     while (this.lastPhysicsUpdate >= physicsInterval) {

@@ -2,12 +2,14 @@ import { v4 as uuidv4 } from "uuid";
 import { model } from "..";
 
 // Load Chance
-var Chance = require("chance");
+let Chance = require("chance");
 // Instantiate Chance so it can be used
-var chance = new Chance();
+let chance = new Chance();
 
 import plr from "../assets/images/player1.png";
 import asteroid from "../assets/images/asteroid.png";
+import bolt from "../assets/images/playerbullet.png";
+import { PlayState, HUDparameters, updateHudData } from "../states/game";
 
 export class Vector {
   x: number;
@@ -24,6 +26,22 @@ export class Vector {
     vector.y += delta.y;
     return vector;
   }
+
+  getDistance(otherBody: Vector): number {
+    //get vector between
+    const newVector = new Vector(this.x - otherBody.x, this.y - otherBody.y);
+    return newVector.getMag();
+  }
+
+  subtract(otherBody: Vector): Vector {
+    return new Vector(otherBody.x - this.x, otherBody.y - this.y);
+  }
+
+  normalize(): Vector {
+    const mag = this.getMag();
+    return new Vector(this.x / mag, this.y / mag);
+  }
+
   multiply(delta, update = false) {
     const vector = update ? this : new Vector(this.x, this.y);
     const deltaVector = delta instanceof Vector ? delta : new Vector(delta, delta);
@@ -31,13 +49,21 @@ export class Vector {
     vector.y *= deltaVector.y;
     return vector;
   }
-  angle2rad(angle: number): number {
+  static angle2rad(angle: number): number {
     return angle * (Math.PI / 180);
   }
 
+  getMag() {
+    return Math.sqrt(this.x * this.x + this.y * this.y);
+  }
+
+  getAngle() {
+    return Math.atan2(this.y, this.x) * (180 / Math.PI);
+  }
+
   setPolar(magnitude: number, angle: number) {
-    this.x = magnitude * Math.cos(this.angle2rad(angle));
-    this.y = magnitude * Math.sin(this.angle2rad(angle));
+    this.x = magnitude * Math.cos(Vector.angle2rad(angle));
+    this.y = magnitude * Math.sin(Vector.angle2rad(angle));
   }
 }
 
@@ -71,6 +97,10 @@ export class Player extends Entity {
   thrust: boolean;
   reverseThrust: boolean;
   ssPosition: string = "0px 0px";
+  gunToggle: boolean = false;
+  mass: number = 5;
+  centerpoint = new Vector(0, 0);
+  invincibleTimer: number;
 
   constructor(screenw: number, screenh: number) {
     super("Player");
@@ -82,12 +112,18 @@ export class Player extends Entity {
     this.travelAngle = 0;
     this.thrust = false;
     this.reverseThrust = false;
+    this.radius;
     if (screenw <= screenh) tempSize = screenw / 13;
     else tempSize = screenh / 13;
     this.size.add({ x: tempSize, y: tempSize }, true);
+    this.radius = this.size.x / 2;
     this.position.add({ x: screenw / 2 - tempSize / 2, y: screenh / 2 - tempSize / 2 }, true);
+    this.invincibleTimer = 0;
   }
-  fire() {}
+  fire() {
+    this.gunToggle = !this.gunToggle;
+    model.entities.push(new Bullet(this.gunToggle, this.angle, this.size));
+  }
   turnLeft() {
     this.angle -= 2;
   }
@@ -107,6 +143,11 @@ export class Player extends Entity {
     this.travelAngle = this.angle;
   }
   update(updatetime: number) {
+    //burn off invincibility
+    if (this.invincibleTimer > 0) {
+      this.invincibleTimer -= updatetime;
+    } else this.invincibleTimer = 0;
+
     //set thrust
     if (this.thrust) {
       this.velocity.x += Math.cos(this.angle2rad(this.travelAngle)) * updatetime * 125;
@@ -119,7 +160,53 @@ export class Player extends Entity {
 
     this.position.x += this.velocity.x * updatetime;
     this.position.y += this.velocity.y * updatetime;
+    this.centerpoint.x = this.position.x + this.size.x / 2;
+    this.centerpoint.y = this.position.y + this.size.y / 2;
 
+    //check for asteroid collisions
+    //get asteroids
+    const listOfAsteroids = model.entities.filter(ent => {
+      return ent.type == "ASTEROID";
+    });
+
+    listOfAsteroids.forEach(ast => {
+      const distance = this.centerpoint.getDistance(ast.centerpoint);
+
+      if (distance < this.radius * 0.95 + ast.radius * 0.95) {
+        if (this.invincibleTimer > 0) return;
+        //we have a collision
+        console.error("COLLISION");
+        this.health -= 1;
+        this.invincibleTimer = 3;
+        updateHudData(HUDparameters.HEALTH, -1);
+        if (this.health <= 0) {
+          //die and reduce lives, and refresh .entities
+          this.lives -= 1;
+          this.health = 25;
+          model.health = 25;
+          updateHudData(HUDparameters.LIVES, -1);
+          if (this.lives <= 0) {
+            //game over
+          }
+        }
+        const vCollision = this.centerpoint.subtract(ast.centerpoint);
+        const vCollisionNormal = vCollision.normalize();
+        const vRelativeVelocity = new Vector(this.velocity.x - ast.velocity.x, this.velocity.y - ast.velocity.y);
+        const speed = vRelativeVelocity.x * vCollisionNormal.x + vRelativeVelocity.y * vCollisionNormal.y;
+
+        if (speed > 0) {
+          let impulse = (2 * speed) / (this.mass + ast.mass);
+          this.velocity.x -= impulse * ast.mass * vCollisionNormal.x;
+          this.velocity.y -= impulse * ast.mass * vCollisionNormal.y;
+          this.position.x += this.velocity.x / 10;
+          this.position.y += this.velocity.y / 10;
+          ast.velocity.x += impulse * this.mass * vCollisionNormal.x;
+          ast.velocity.y += impulse * this.mass * vCollisionNormal.y;
+          ast.position.x += ast.velocity.x / 10;
+          ast.position.y += ast.velocity.y / 10;
+        }
+      }
+    });
     //check for screen collision
     if (this.position.x > model.screenwidth) this.position.x = -10;
     if (this.position.x < -11) this.position.x = model.screenwidth - 20;
@@ -145,24 +232,38 @@ export class Asteroid extends Entity {
   rotationAmount: number = 0;
   secondSpin: boolean = false;
   secondSpinRate: number = 0;
+  centerpoint = new Vector(0, 0);
+  mass: number;
 
   //setup the different types of asteroid spritesheet params
   sizeMap = {
     small: {
       divSize: 82.125 / 2,
       cssSize: "320px 320px",
+      health: 15,
+      mass: 50,
+      reward: 20,
     },
     medium: {
       divSize: 82.125,
       cssSize: "640px 640px",
+      health: 20,
+      mass: 100,
+      reward: 15,
     },
     large: {
       divSize: 82.125 * 1.25,
       cssSize: "800px 800px",
+      health: 25,
+      mass: 150,
+      reward: 15,
     },
     epic: {
       divSize: 82.125 * 1.5,
       cssSize: "960px 960px",
+      health: 30,
+      mass: 200,
+      reward: 10,
     },
   };
   frames = [];
@@ -170,11 +271,6 @@ export class Asteroid extends Entity {
   constructor(screenw: number, screenh: number) {
     super("asteroid");
     this.type = "ASTEROID";
-    this.health = 25;
-    this.reward = chance.integer({ min: 5, max: 25 });
-    let tempSize = 0;
-    if (screenw <= screenh) tempSize = screenw / 6;
-    else tempSize = screenh / 6;
 
     //select random type of asteroid (size)
     const selection = chance.pickone(["small", "medium", "large", "epic"]);
@@ -185,10 +281,12 @@ export class Asteroid extends Entity {
 
     if (this.secondSpin) this.secondSpinRate = chance.floating({ min: 0.1, max: 4.0, fixed: 2 });
 
-    console.log(selection);
     //select div size, then spritesheet size, then position
     const aSize = this.sizeMap[selection].divSize;
     this.textureSize = this.sizeMap[selection].cssSize;
+    this.health = this.sizeMap[selection].health;
+    this.mass = this.sizeMap[selection].mass;
+    this.reward = this.sizeMap[selection].reward;
     this.ssPosition = "0px 0px";
 
     //load up frames
@@ -199,14 +297,36 @@ export class Asteroid extends Entity {
         this.frames.push({ x: x * -aSize, y: y * -aSize - offset });
       }
     }
-    console.log(this.frames);
 
-    //find starting spot - this will be changed later
-    const tempX = chance.integer({ min: 0, max: screenw });
-    const tempY = chance.integer({ min: 0, max: screenh });
+    //find starting spot
+    const tempSide = chance.integer({ min: 0, max: 3 });
+    let tempX, tempY;
+    switch (tempSide) {
+      case 0:
+        //left side
+        tempX = 0;
+        tempY = chance.integer({ min: 0, max: screenh });
+        break;
+      case 1:
+        //top side
+        tempX = chance.integer({ min: 0, max: screenw });
+        tempY = 0;
+        break;
+      case 2:
+        //right side
+        tempX = screenw;
+        tempY = chance.integer({ min: 0, max: screenh });
+        break;
+      case 3:
+        //bottom side
+        tempX = chance.integer({ min: 0, max: screenw });
+        tempY = screenh;
+        break;
+    }
 
     //set size, position, and velocity vectors
     this.size.add({ x: aSize, y: aSize }, true);
+    this.radius = aSize / 2;
     this.position.add({ x: tempX, y: tempY }, true);
     this.velocity.x = chance.integer({ min: -4, max: 4 });
     this.velocity.y = chance.integer({ min: -4, max: 4 });
@@ -214,16 +334,87 @@ export class Asteroid extends Entity {
     this.texture = asteroid;
   }
 
-  spawn() {}
+  destroy() {
+    const removeIndex = model.entities.findIndex(ent => {
+      return ent.id == this.id;
+    });
+    model.entities.splice(removeIndex, 1);
+  }
+
+  static spawn() {
+    model.entities.push(new Asteroid(model.screenwidth, model.screenheight));
+  }
+
   update(deltatime: number) {
     this.position.x += this.velocity.x;
     this.position.y += this.velocity.y;
+    this.centerpoint.x = this.position.x + this.size.x / 2;
+    this.centerpoint.y = this.position.y + this.size.y / 2;
 
     //check for screen collision
     if (this.position.x > model.screenwidth) this.position.x = -10;
     if (this.position.x < -11) this.position.x = model.screenwidth - 20;
     if (this.position.y < -11) this.position.y = model.screenheight - 20;
     if (this.position.y > model.screenheight) this.position.y = -10;
+
+    //check for asteroid collisions
+    //get asteroids
+    const listOfAsteroids = model.entities.filter(ent => {
+      return ent.type == "ASTEROID" && ent.id != this.id;
+    });
+
+    listOfAsteroids.forEach(ast => {
+      const distance = this.centerpoint.getDistance(ast.centerpoint);
+
+      if (distance < this.radius * 0.95 + ast.radius * 0.95) {
+        //we have a collision
+        console.warn("COLLISION");
+
+        const vCollision = this.centerpoint.subtract(ast.centerpoint);
+        const vdistance = vCollision.getMag();
+        const vCollisionNormal = vCollision.normalize();
+        const vRelativeVelocity = new Vector(this.velocity.x - ast.velocity.x, this.velocity.y - ast.velocity.y);
+        const speed = vRelativeVelocity.x * vCollisionNormal.x + vRelativeVelocity.y * vCollisionNormal.y;
+        //PlayState.running = false;
+        if (speed > 0) {
+          let impulse = (2 * speed) / (this.mass + ast.mass);
+          this.velocity.x -= impulse * ast.mass * vCollisionNormal.x;
+          this.velocity.y -= impulse * ast.mass * vCollisionNormal.y;
+          /* this.position.x += this.velocity.x / 10;
+          this.position.y += this.velocity.y / 10; */
+          ast.velocity.x += impulse * this.mass * vCollisionNormal.x;
+          ast.velocity.y += impulse * this.mass * vCollisionNormal.y;
+          /*  ast.position.x += ast.velocity.x / 10;
+          ast.position.y += ast.velocity.y / 10; */
+        }
+      }
+    });
+
+    //check for bullet collisions
+    //get bullets
+    const listOfBullets = model.entities.filter(ent => {
+      return ent.type == "BULLET";
+    });
+
+    //loop through bullets and check for collisions
+    listOfBullets.forEach(bullet => {
+      //get distance between bullet cp and asteroid cp
+      const distance = this.centerpoint.getDistance(bullet.centerpoint);
+
+      if (distance < this.radius * 0.75 + bullet.radius) {
+        //we have a collision
+        console.warn("BULLET COLLISION");
+        bullet.destroy();
+        updateHudData(HUDparameters.SCORE, 5);
+        this.health -= bullet.damage;
+        if (this.health <= 0) {
+          this.destroy();
+          updateHudData(HUDparameters.SCORE, this.reward);
+          updateHudData(HUDparameters.EXPERIENCE, this.reward);
+          //asteroid destroyed
+        }
+      }
+    });
 
     //rotate div
     if (this.secondSpin) this.angle += this.secondSpinRate;
@@ -243,10 +434,48 @@ export class Asteroid extends Entity {
 }
 
 class Bullet extends Entity {
-  damage: number;
-  constructor() {
+  texture: string = bolt;
+  damage: number = 5;
+  ssPosition: string;
+  textureSize: string;
+  radius: number;
+  centerpoint = new Vector(0, 0);
+  halfsize = new Vector(0, 0);
+
+  constructor(spawnpoint: boolean, angle: number, shipsize: Vector) {
     super("bullet");
     this.type = "BULLET";
+
+    this.size.x = shipsize.x / 3;
+    this.size.y = shipsize.y / 2;
+    this.radius = this.size.x / 2;
+    this.angle = angle;
+    this.ssPosition = "0px 0px";
+    this.textureSize = "contain";
+    if (spawnpoint) this.position = model.spawnPoint1;
+    else this.position = model.spawnPoint2;
+    this.position.y -= this.size.y / 2;
+    this.velocity.setPolar(5.5, this.angle);
+  }
+
+  destroy() {
+    const removeIndex = model.entities.findIndex(ent => {
+      return ent.id == this.id;
+    });
+    model.entities.splice(removeIndex, 1);
+  }
+
+  update(deltaTime) {
+    this.position.x += this.velocity.x;
+    this.position.y += this.velocity.y;
+    this.centerpoint.x = this.position.x + this.size.x / 2;
+    this.centerpoint.y = this.position.y + this.size.y / 2;
+
+    //check for screen collision
+    if (this.position.x > model.screenwidth) this.destroy();
+    if (this.position.x < -11) this.destroy();
+    if (this.position.y < -11) this.destroy();
+    if (this.position.y > model.screenheight) this.destroy();
   }
 }
 

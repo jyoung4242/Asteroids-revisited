@@ -1,8 +1,9 @@
 import "./style.css";
-import { UI } from "peasy-ui";
+import { UI } from "@peasy-lib/peasy-ui";
 import { GameState } from "./states/gameState";
 import { MenuState } from "./states/menu";
 import { PlayState } from "./states/game";
+import { Vector } from "./lib/ecs";
 
 let touches = [];
 
@@ -20,6 +21,11 @@ export enum GameStates {
 }
 
 export let model = {
+  lives: 3,
+  health: 25,
+  exp: 0,
+  gameLevel: 1,
+  score: 0,
   fps: "",
   deviceType: DeviceType.IOS,
   screenwidth: 600,
@@ -33,6 +39,22 @@ export let model = {
   },
   get isMobile() {
     return model.deviceType == DeviceType.IOS || model.deviceType == DeviceType.ANDROID;
+  },
+  get spawnPoint1() {
+    let cpX = model.entities[0].position.x + model.entities[0].size.x / 2;
+    let cpY = model.entities[0].position.y + model.entities[0].size.y / 2;
+    let radius = model.entities[0].size.x / 2.125;
+    let sx = radius * Math.cos(Vector.angle2rad(model.entities[0].angle + 10));
+    let sy = radius * Math.sin(Vector.angle2rad(model.entities[0].angle + 10));
+    return new Vector(cpX + sx, cpY + sy);
+  },
+  get spawnPoint2() {
+    let cpX = model.entities[0].position.x + model.entities[0].size.x / 2;
+    let cpY = model.entities[0].position.y + model.entities[0].size.y / 2;
+    let radius = model.entities[0].size.x / 2.125;
+    let sx = radius * Math.cos(Vector.angle2rad(model.entities[0].angle - 10));
+    let sy = radius * Math.sin(Vector.angle2rad(model.entities[0].angle - 10));
+    return new Vector(cpX + sx, cpY + sy);
   },
   entities: [],
   joystick: {
