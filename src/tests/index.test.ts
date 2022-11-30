@@ -29,9 +29,61 @@ describe("run init routine", () => {
     else if (angle <= 0 && angle > -67.5) return "SE";
   };
   let localModel = {
+    ammo: "100%",
+    hud: {
+      ammo: {
+        color: "lime",
+        fill: "74",
+      },
+      health: {
+        get healthbar10() {
+          return localModel.health > 23;
+        },
+        get healthbar9() {
+          return localModel.health > 21;
+        },
+        get healthbar8() {
+          return localModel.health > 19;
+        },
+        get healthbar7() {
+          return localModel.health > 16;
+        },
+        get healthbar6() {
+          return localModel.health > 14;
+        },
+        get healthbar5() {
+          return localModel.health > 12;
+        },
+        get healthbar4() {
+          return localModel.health > 10;
+        },
+        get healthbar3() {
+          return localModel.health > 8;
+        },
+        get healthbar2() {
+          return localModel.health > 5;
+        },
+        get healthbar1() {
+          return localModel.health > 2;
+        },
+      },
+    },
+    testvis: true,
+    test: () => {
+      localModel.testvis = !localModel.testvis;
+    },
     lives: 3,
+    get lives3() {
+      return localModel.lives == 3;
+    },
+    get lives2() {
+      return localModel.lives >= 2;
+    },
+    get lives1() {
+      return localModel.lives >= 1;
+    },
     health: 25,
-    exp: 0,
+    exp: "0",
     gameLevel: 1,
     score: 0,
     fps: "",

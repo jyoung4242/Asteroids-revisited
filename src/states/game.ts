@@ -27,13 +27,13 @@ export const updateHudData = (param: HUDparameters, incValue: number) => {
       model.score += incValue;
       break;
     case HUDparameters.EXPERIENCE:
-      model.exp += incValue;
-      //leveling up and changin parameters
-      if (model.exp >= 100) {
+      if (model.entities[0].exp >= 100) {
+        model.entities[0].exp = 0;
         model.gameLevel += 1;
         spawnRate *= 0.95;
-        model.exp = 0;
       }
+      model.exp = `${model.entities[0].exp}%`;
+
       break;
     case HUDparameters.LIVES:
       model.lives += incValue;
@@ -55,10 +55,68 @@ export class PlayState extends State {
   entities = [];
   mapping: any = undefined;
   firelatch: boolean = false;
+  /*
 
+          
+          
+
+*/
   static template = `
   <div class="content" \${===isGame}>
-    <span>FPS: \${fps}</span><span>   Game Level: \${gameLevel}   </span>  <span>   Experience: \${exp}   </span><span>  Score: \${score}</span><span>  Health: \${health}</span><span>  Lives: \${lives}</span>
+      
+    <div>
+      <div class="HUD_Health">
+        <span class="HUD_Health_title">HEALTH</span>
+        <div class="healthflex">
+          <div class="greenHealthbar healthbar10" \${===hud.health.healthbar10}></div>
+          <div class="greenHealthbar healthbar9" \${===hud.health.healthbar9}></div>
+          <div class="greenHealthbar healthbar8" \${===hud.health.healthbar8}></div>
+          <div class="greenHealthbar healthbar7" \${===hud.health.healthbar7}></div>
+          <div class="yellowHealthbar healthbar6" \${===hud.health.healthbar6}></div>
+          <div class="yellowHealthbar healthbar5" \${===hud.health.healthbar5}></div>
+          <div class="yellowHealthbar healthbar4" \${===hud.health.healthbar4}></div>
+          <div class="yellowHealthbar healthbar3" \${===hud.health.healthbar3}></div>
+          <div class="redHealthbar healthbar2" \${===hud.health.healthbar2}></div>
+          <div class="redHealthbar healthbar1" \${===hud.health.healthbar1}></div>
+        </div>
+      </div>
+      <div class="HUD_Ammo">
+        <span class="HUD_Ammo_title">AMMO</span>
+        <div class="tankframe">
+           <div class="ammo_energy" style="height: \${ammo};"></div>
+           <div class="tank"></div>
+        </div>    
+          
+      </div>
+      <div>
+        <div class="LivesSection">
+          Lives: 
+          <div class="livesIcon " \${===lives1}></div>
+          <div class="livesIcon " \${===lives2}></div>
+          <div class="livesIcon " \${===lives3}></div>
+        </div>
+
+        <div class="LevelSection">
+          Level: \${gameLevel}
+        </div>
+
+        <div class="scoreSection">
+          Score: \${score}
+        </div>
+
+        <div class="expSection">
+          <div class="expFrame"></div>
+          <div class="expBar"></div>
+        </div>
+
+        <div class="expBar">
+          <div class="expLevel" style="width:\${exp};"></div>
+        </div>
+        
+      </div>
+
+    </div>
+    <span class="diag">FPS: \${fps}</span><span><span>  
     <div class="\${entity.type}" \${entity<=*entities:id} style="top: \${entity.position.y}px; left: \${entity.position.x}px; width: \${entity.size.x}px; height: \${entity.size.y}px ">
       <div class="inner" style="rotate: \${entity.angle}deg; background-image:url(\${entity.texture});background-position: \${entity.ssPosition};background-size:\${entity.textureSize};">
       </div>
@@ -79,8 +137,7 @@ export class PlayState extends State {
     <div class="buttonDiv" \${===isMobile}>
         <div class="but_rel" \${pointerdown@=>fire} \${pointerup@=>stopfiring}></div>
     </div>
-  </div>
-  `;
+  </div>`;
 
   constructor() {
     super("game");

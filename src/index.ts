@@ -22,8 +22,18 @@ export enum GameStates {
 
 export let model = {
   lives: 3,
+  get lives3() {
+    return model.lives == 3;
+  },
+  get lives2() {
+    return model.lives >= 2;
+  },
+  get lives1() {
+    return model.lives >= 1;
+  },
+  ammo: "100%",
   health: 25,
-  exp: 0,
+  exp: "0",
   gameLevel: 1,
   score: 0,
   fps: "",
@@ -132,6 +142,48 @@ export let model = {
       clearTimeout(model.holdInterval);
       model.holdInterval = undefined;
     }
+  },
+  testvis: true,
+  test: () => {
+    model.testvis = !model.testvis;
+  },
+  hud: {
+    health: {
+      get healthbar10() {
+        return model.health > 23;
+      },
+      get healthbar9() {
+        return model.health > 21;
+      },
+      get healthbar8() {
+        return model.health > 19;
+      },
+      get healthbar7() {
+        return model.health > 16;
+      },
+      get healthbar6() {
+        return model.health > 14;
+      },
+      get healthbar5() {
+        return model.health > 12;
+      },
+      get healthbar4() {
+        return model.health > 10;
+      },
+      get healthbar3() {
+        return model.health > 8;
+      },
+      get healthbar2() {
+        return model.health > 5;
+      },
+      get healthbar1() {
+        return model.health > 0;
+      },
+    },
+    ammo: {
+      color: "lime",
+      fill: "74",
+    },
   },
 };
 

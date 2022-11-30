@@ -5,11 +5,13 @@ import { model } from "..";
 let Chance = require("chance");
 // Instantiate Chance so it can be used
 let chance = new Chance();
+const MAX_PLAYER_SPEED = 650;
 
 import plr from "../assets/images/player1.png";
 import asteroid from "../assets/images/asteroid.png";
 import bolt from "../assets/images/playerbullet.png";
 import { PlayState, HUDparameters, updateHudData } from "../states/game";
+import { createImportSpecifier } from "typescript";
 
 export class Vector {
   x: number;
@@ -89,6 +91,7 @@ class Entity {
 
 export class Player extends Entity {
   health: number;
+  ammo: number;
   exp: number;
   lives: number;
   texture: string = plr;
@@ -101,6 +104,7 @@ export class Player extends Entity {
   mass: number = 5;
   centerpoint = new Vector(0, 0);
   invincibleTimer: number;
+  ammoCounter = 0;
 
   constructor(screenw: number, screenh: number) {
     super("Player");
@@ -119,10 +123,16 @@ export class Player extends Entity {
     this.radius = this.size.x / 2;
     this.position.add({ x: screenw / 2 - tempSize / 2, y: screenh / 2 - tempSize / 2 }, true);
     this.invincibleTimer = 0;
+    this.ammo = 25;
   }
   fire() {
-    this.gunToggle = !this.gunToggle;
-    model.entities.push(new Bullet(this.gunToggle, this.angle, this.size));
+    if (this.ammo > 0) {
+      this.gunToggle = !this.gunToggle;
+      model.entities.push(new Bullet(this.gunToggle, this.angle, this.size));
+      this.ammo -= 1;
+      const displayedAmmo = ((this.ammo / 25) * 100).toFixed(1);
+      model.ammo = `${displayedAmmo}%`;
+    }
   }
   turnLeft() {
     this.angle -= 2;
@@ -142,20 +152,50 @@ export class Player extends Entity {
     this.reverseThrust = true;
     this.travelAngle = this.angle;
   }
+
+  ammoBonus() {
+    if (this.ammo > 17) {
+      this.ammo = 25;
+      const displayedAmmo = ((this.ammo / 25) * 100).toFixed(1);
+      model.ammo = `${displayedAmmo}%`;
+    } else {
+      this.ammo += 8;
+      const displayedAmmo = ((this.ammo / 25) * 100).toFixed(1);
+      model.ammo = `${displayedAmmo}%`;
+    }
+  }
+
   update(updatetime: number) {
     //burn off invincibility
     if (this.invincibleTimer > 0) {
       this.invincibleTimer -= updatetime;
     } else this.invincibleTimer = 0;
 
+    //ammo regeneration
+    if (this.ammo < 25) {
+      this.ammoCounter += updatetime;
+
+      if (this.ammoCounter >= 1.5) {
+        this.ammo += 1;
+        this.ammoCounter = 0;
+        const displayedAmmo = ((this.ammo / 25) * 100).toFixed(1);
+        model.ammo = `${displayedAmmo}%`;
+      }
+    }
+
     //set thrust
     if (this.thrust) {
-      this.velocity.x += Math.cos(this.angle2rad(this.travelAngle)) * updatetime * 125;
-      this.velocity.y += Math.sin(this.angle2rad(this.travelAngle)) * updatetime * 125;
+      //does velocity exceed max speed
+      if (this.velocity.x < MAX_PLAYER_SPEED && this.velocity.x > -MAX_PLAYER_SPEED)
+        this.velocity.x += Math.cos(this.angle2rad(this.travelAngle)) * updatetime * 125;
+      if (this.velocity.y < MAX_PLAYER_SPEED && this.velocity.y > -MAX_PLAYER_SPEED)
+        this.velocity.y += Math.sin(this.angle2rad(this.travelAngle)) * updatetime * 125;
     }
     if (this.reverseThrust) {
-      this.velocity.x -= Math.cos(this.angle2rad(this.travelAngle)) * updatetime * 125;
-      this.velocity.y -= Math.sin(this.angle2rad(this.travelAngle)) * updatetime * 125;
+      if (this.velocity.x < MAX_PLAYER_SPEED && this.velocity.x > -MAX_PLAYER_SPEED)
+        this.velocity.x -= Math.cos(this.angle2rad(this.travelAngle)) * updatetime * 125;
+      if (this.velocity.y < MAX_PLAYER_SPEED && this.velocity.y > -MAX_PLAYER_SPEED)
+        this.velocity.y -= Math.sin(this.angle2rad(this.travelAngle)) * updatetime * 125;
     }
 
     this.position.x += this.velocity.x * updatetime;
@@ -175,7 +215,7 @@ export class Player extends Entity {
       if (distance < this.radius * 0.95 + ast.radius * 0.95) {
         if (this.invincibleTimer > 0) return;
         //we have a collision
-        console.error("COLLISION");
+
         this.health -= 1;
         this.invincibleTimer = 3;
         updateHudData(HUDparameters.HEALTH, -1);
@@ -368,7 +408,6 @@ export class Asteroid extends Entity {
 
       if (distance < this.radius * 0.95 + ast.radius * 0.95) {
         //we have a collision
-        console.warn("COLLISION");
 
         const vCollision = this.centerpoint.subtract(ast.centerpoint);
         const vdistance = vCollision.getMag();
@@ -410,8 +449,12 @@ export class Asteroid extends Entity {
         if (this.health <= 0) {
           this.destroy();
           updateHudData(HUDparameters.SCORE, this.reward);
+          model.entities[0].exp += this.reward;
+
           updateHudData(HUDparameters.EXPERIENCE, this.reward);
           //asteroid destroyed
+          //give ammo bonus
+          model.entities[0].ammoBonus();
         }
       }
     });
