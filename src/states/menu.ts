@@ -4,6 +4,8 @@ import { Input } from "@peasy-lib/peasy-input";
 
 export class MenuState extends State {
   mapping: any;
+  model: any;
+  controller = new AbortController();
   static template = `
   <div class="content menu" \${===isMenu}>
     <span class="title">ASTEROIDS PLUS 2.0</span>  
@@ -15,15 +17,17 @@ export class MenuState extends State {
     super("menu");
   }
 
+  transition_menu = function (model: any) {
+    GameState.set("game", "default", model);
+  };
+
   public enter(_previous: State, ...params: any): void {
     const [model] = params;
-
+    this.model = model;
     model.gamestate = GameStates.MENU;
 
     if (model.isMobile) {
-      document.addEventListener("touchstart", () => {
-        GameState.set("game", "default", model);
-      });
+      document.addEventListener("touchstart", e => this.transition_menu(model), { signal: this.controller.signal });
     } else {
       this.mapping = Input.map(
         {
@@ -47,6 +51,10 @@ export class MenuState extends State {
     const [model] = params;
     if (this.mapping) this.mapping.unmap();
     model.gamestate = "transition";
+    if (model.isMobile) {
+      this.controller.abort();
+    }
+
     //mockup timer to change states
     await this.wait(2000);
   }

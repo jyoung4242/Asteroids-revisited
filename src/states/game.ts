@@ -125,7 +125,7 @@ export class PlayState extends State {
 
     </div>
     <span class="diag">FPS: \${fps}</span><span><span>  
-    <div class="\${entity.type}" \${entity<=*entities:id} style="top: \${entity.position.y}px; left: \${entity.position.x}px; width: \${entity.size.x}px; height: \${entity.size.y}px ">
+    <div class="\${entity.type}" \${entity<=*entities:id} style="top: \${entity.position.y}px; left: \${entity.position.x}px; width: \${entity.size.x}px; height: \${entity.size.y}px; transform: scale(\${entity.mobileScaling}) ">
       <div class="inner" style="rotate: \${entity.angle}deg; background-image:url(\${entity.texture});background-position: \${entity.ssPosition};background-size:\${entity.textureSize};">
       </div>
     </div>
@@ -272,8 +272,14 @@ export class PlayState extends State {
       if (model.joystick.dir == "NE" || model.joystick.dir == "N" || model.joystick.dir == "NW")
         model.entities[0].accelerate();
       if (model.joystick.dir == "SE" || model.joystick.dir == "S" || model.joystick.dir == "SW") model.entities[0].reverse();
-
       if (model.joystick.dir == "NA") model.entities[0].decelerate();
+
+      if (model.button.status == "pressed" && !this.firelatch) {
+        model.entities[0].fire();
+        this.firelatch = true;
+      } else if (model.button.status == "released" && this.firelatch) {
+        this.firelatch = false;
+      }
     } else if (!model.isMobile && model.entities[0]) {
       //keyboard input
       if (model.keypresses.direction == "LEFT") model.entities[0].turnLeft();

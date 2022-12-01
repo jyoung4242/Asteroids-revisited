@@ -21,6 +21,7 @@ export enum GameStates {
 }
 
 export let model = {
+  mobileScale: "",
   lives: 3,
   get lives3() {
     return model.lives == 3;
@@ -127,7 +128,7 @@ export let model = {
     direction: "NONE",
   },
   button: {
-    status: "not pressed",
+    status: "released",
   },
   holdInterval: <any>undefined,
   fire: (event: any) => {
@@ -144,10 +145,6 @@ export let model = {
       clearTimeout(model.holdInterval);
       model.holdInterval = undefined;
     }
-  },
-  testvis: true,
-  test: () => {
-    model.testvis = !model.testvis;
   },
   hud: {
     health: {

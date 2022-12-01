@@ -84,6 +84,7 @@ class Entity {
   name: string;
   radius: number;
   isVisible: boolean = false;
+  mobileScaling: string = "";
 
   constructor(name: string) {
     this.name = name;
@@ -125,6 +126,7 @@ export class Player extends Entity {
     this.radius;
     this.screenh = screenh;
     this.screenw = screenw;
+    this.mobileScaling = "";
 
     if (screenw <= screenh) tempSize = screenw / 13;
     else tempSize = screenh / 13;
@@ -314,6 +316,7 @@ export class Asteroid extends Entity {
       health: 15,
       mass: 50,
       reward: 20,
+      scaling: "0.8",
     },
     medium: {
       divSize: 82.125,
@@ -321,6 +324,7 @@ export class Asteroid extends Entity {
       health: 20,
       mass: 100,
       reward: 15,
+      scaling: "0.8",
     },
     large: {
       divSize: 82.125 * 1.25,
@@ -328,6 +332,7 @@ export class Asteroid extends Entity {
       health: 25,
       mass: 150,
       reward: 15,
+      scaling: "0.8",
     },
     epic: {
       divSize: 82.125 * 1.5,
@@ -335,6 +340,7 @@ export class Asteroid extends Entity {
       health: 30,
       mass: 200,
       reward: 10,
+      scaling: "0.8",
     },
   };
   frames = [];
@@ -358,6 +364,8 @@ export class Asteroid extends Entity {
     this.health = this.sizeMap[selection].health;
     this.mass = this.sizeMap[selection].mass;
     this.reward = this.sizeMap[selection].reward;
+    if (model.isMobile) this.mobileScaling = this.sizeMap[selection].scaling;
+    else this.mobileScaling = "";
     this.ssPosition = "0px 0px";
 
     //load up frames
@@ -399,8 +407,13 @@ export class Asteroid extends Entity {
     this.size.add({ x: aSize, y: aSize }, true);
     this.radius = aSize / 2;
     this.position.add({ x: tempX, y: tempY }, true);
-    this.velocity.x = chance.integer({ min: -4, max: 4 });
-    this.velocity.y = chance.integer({ min: -4, max: 4 });
+    if (model.isMobile) {
+      this.velocity.x = chance.integer({ min: -1.5, max: 1.5 });
+      this.velocity.y = chance.integer({ min: -1.5, max: 1.5 });
+    } else {
+      this.velocity.x = chance.integer({ min: -4, max: 4 });
+      this.velocity.y = chance.integer({ min: -4, max: 4 });
+    }
 
     this.texture = asteroid;
   }
