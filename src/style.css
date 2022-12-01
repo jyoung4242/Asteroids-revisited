@@ -383,6 +383,7 @@ body {
   top: 0.5%;
   left: 2%;
   display: flex;
+  width: 20%;
   justify-content: space-evenly;
   align-content: center;
 }
@@ -392,7 +393,7 @@ body {
   font-size: 1.2vw;
   top: 0.5%;
   left: 50%;
-  width: 10%;
+  width: 15%;
   transform: translateX(-50%);
 }
 
@@ -412,7 +413,7 @@ body {
 .expBar {
   opacity: 0.7;
   position: absolute;
-  top: 4%;
+  top: 3vw;
   left: 0px;
   width: 100%;
   height: 5px;
@@ -431,8 +432,7 @@ body {
   background-image: url("./assets/images/player1.png");
   background-size: cover;
   background-repeat: no-repeat;
-  width: 1vw;
-  height: 1vw;
+  aspect-ratio: 1/1;
 }
 
 .statusMessage {

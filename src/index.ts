@@ -176,6 +176,9 @@ export let model = {
     mobileCSSstring: "",
     TitleFontSize: "3vw;",
     mobileStartFonstSize: "4vw",
+    livesIconWidth: "1.5vw",
+    HUDfontSize: "1.5vw",
+    barTop: "3vw",
   },
 };
 
@@ -210,6 +213,9 @@ const resizeScreen = (m = model) => {
     m.css.fireButtonWidth = "25%";
     m.css.fireButtonRight = "20px";
     m.css.TitleFontSize = "5vw";
+    m.css.livesIconWidth = "4vw";
+    m.css.HUDfontSize = "3vw";
+    m.css.barTop = "6vw";
   } else if (m.isMobile && m.css.orientation == "landscape") {
     m.css.navButtonBottom = "20px";
     m.css.navButtonLeft = "10px";
@@ -217,6 +223,9 @@ const resizeScreen = (m = model) => {
     m.css.fireButtonWidth = "15%";
     m.css.fireButtonRight = "10px";
     m.css.TitleFontSize = "4vw";
+    m.css.livesIconWidth = "2vw";
+    m.css.HUDfontSize = "2vw";
+    m.css.barTop = "3vw";
   }
 };
 

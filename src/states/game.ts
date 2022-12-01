@@ -90,27 +90,22 @@ export class PlayState extends State {
           
       </div>
       <div>
-        <div class="LivesSection">
+        <div class="LivesSection" style="font-size: \${css.HUDfontSize};">
           Lives: 
-          <div class="livesIcon " \${===lives1}></div>
-          <div class="livesIcon " \${===lives2}></div>
-          <div class="livesIcon " \${===lives3}></div>
+          <div class="livesIcon" style="width: \${css.livesIconWidth}" \${===lives1}></div>
+          <div class="livesIcon" style="width: \${css.livesIconWidth}" \${===lives2}></div>
+          <div class="livesIcon" style="width: \${css.livesIconWidth}" \${===lives3}></div>
         </div>
 
-        <div class="LevelSection">
+        <div class="LevelSection" style="font-size: \${css.HUDfontSize};">
           Level: \${gameLevel}
         </div>
 
-        <div class="scoreSection">
+        <div class="scoreSection" style="font-size: \${css.HUDfontSize};">
           Score: \${score}
         </div>
 
-        <div class="expSection">
-          <div class="expFrame"></div>
-          <div class="expBar"></div>
-        </div>
-
-        <div class="expBar">
+        <div class="expBar" style="top:\${css.barTop};">
           <div class="expLevel" style="width:\${exp};"></div>
         </div>
 
