@@ -31,6 +31,8 @@ export const updateHudData = (param: HUDparameters, incValue: number) => {
         model.entities[0].exp = 0;
         model.gameLevel += 1;
         spawnRate *= 0.95;
+        model.entities[0].health = 10;
+        model.health = 10;
       }
       model.exp = `${model.entities[0].exp}%`;
 
@@ -59,12 +61,7 @@ export class PlayState extends State {
   entities = [];
   mapping: any = undefined;
   firelatch: boolean = false;
-  /*
 
-          
-          
-
-*/
   static template = `
   <div class="content" \${===isGame}>
       
@@ -84,7 +81,7 @@ export class PlayState extends State {
           <div class="redHealthbar healthbar1" \${===hud.health.healthbar1}></div>
         </div>
       </div>
-      <div class="HUD_Ammo">
+      <div class="HUD_Ammo \${mobileCSSstring}">
         <span class="HUD_Ammo_title">AMMO</span>
         <div class="tankframe">
            <div class="ammo_energy" style="height: \${ammo};"></div>
@@ -130,7 +127,7 @@ export class PlayState extends State {
       </div>
     </div>
 
-    <div class="navButtons" \${===isMobile}>
+    <div class="navButtons" \${===isMobile} style="width: \${css.navButtonWidth}; left: \${css.navButtonLeft}; bottom: \${css.navButtonBottom}">
       <div class="navRel">
         <div id="left" class="touchbutton turnleft"  \${pointerdown@=>nav} \${pointerup@=>stopnav}\${}><span>L</span></div>
         <div id="right" class="touchbutton turnright"  \${pointerdown@=>nav} \${pointerup@=>stopnav}><span>R</span></div>
@@ -139,7 +136,7 @@ export class PlayState extends State {
       </div>
     </div>
 
-    <div class="buttonDiv" \${===isMobile}>
+    <div class="buttonDiv" \${===isMobile} style="width: \${css.fireButtonWidth}; right: \${css.fireButtonRight}; bottom: \${css.navButtonBottom}">
         <div class="but_rel" \${pointerdown@=>fire} \${pointerup@=>stopfiring}></div>
     </div>
   </div>`;

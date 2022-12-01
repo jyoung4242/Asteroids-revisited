@@ -21,17 +21,9 @@ export enum GameStates {
 }
 
 export let model = {
+  //Globals
   mobileScale: "",
   lives: 3,
-  get lives3() {
-    return model.lives == 3;
-  },
-  get lives2() {
-    return model.lives >= 2;
-  },
-  get lives1() {
-    return model.lives >= 1;
-  },
   ammo: "100%",
   statusIsVisible: false,
   statusmessage: "Start Game!",
@@ -44,92 +36,9 @@ export let model = {
   screenwidth: 600,
   screenheight: 400,
   gamestate: GameStates.MENU,
-  get isGame() {
-    return model.gamestate == GameStates.GAME;
-  },
-  get isMenu() {
-    return model.gamestate == GameStates.MENU;
-  },
-  get isMobile() {
-    if (model.deviceType == DeviceType.IOS || model.deviceType == DeviceType.ANDROID) {
-      model.mobileCSSstring = " mobile";
-      return true;
-    } else {
-      model.mobileCSSstring = "";
-      return false;
-    }
-  },
-  mobileCSSstring: "",
-  get spawnPoint1() {
-    let cpX = model.entities[0].position.x + model.entities[0].size.x / 2;
-    let cpY = model.entities[0].position.y + model.entities[0].size.y / 2;
-    let radius = model.entities[0].size.x / 4;
-    let sx = radius * Math.cos(Vector.angle2rad(model.entities[0].angle + 10));
-    let sy = radius * Math.sin(Vector.angle2rad(model.entities[0].angle + 10));
-    return new Vector(cpX + sx, cpY + sy);
-  },
-  get spawnPoint2() {
-    let cpX = model.entities[0].position.x + model.entities[0].size.x / 2;
-    let cpY = model.entities[0].position.y + model.entities[0].size.y / 2;
-    let radius = model.entities[0].size.x / 4;
-    let sx = radius * Math.cos(Vector.angle2rad(model.entities[0].angle - 10));
-    let sy = radius * Math.sin(Vector.angle2rad(model.entities[0].angle - 10));
-    return new Vector(cpX + sx, cpY + sy);
-  },
   entities: [],
-  /* joystick: {
-    start: (event: any, model: any, element: any) => {
-      event.preventDefault();
-      touches = [];
-      touches.push(event.targetTouches[0]);
-    },
-    move: (event: any) => {
-      event.preventDefault();
-      if (!event.targetTouches[0]) return;
-      if (touches.length == 0) return;
-      const x = event.targetTouches[0].clientX - touches[0].clientX;
-      const y = event.targetTouches[0].clientY - touches[0].clientY;
-      const mag = Math.sqrt(x * x + y * y);
-      const angle = Math.atan2(-y, x) * (180 / Math.PI);
-      const dir = angle2direction(angle);
-      if (mag < 100) {
-        model.joystick.knob.style.transform = `translate(${-40 + (event.targetTouches[0].clientX - touches[0].clientX)}px,${
-          -40 + (event.targetTouches[0].clientY - touches[0].clientY)
-        }px)`;
-        model.joystick.angle = angle.toFixed(2);
-        model.joystick.mag = mag.toFixed(2);
-        model.joystick.dir = dir;
-      } else {
-        //normalize vector
-        const Nx = (event.targetTouches[0].clientX - touches[0].clientX) / mag;
-        const Ny = (event.targetTouches[0].clientY - touches[0].clientY) / mag;
-        model.joystick.knob.style.transform = `translate(${-40 + Nx * 100}px,${-40 + Ny * 100}px)`;
-        model.joystick.angle = angle.toFixed(2);
-        model.joystick.mag = "100";
-        model.joystick.dir = dir;
-      }
-    },
-    end: (event: any) => {
-      event.preventDefault();
-      model.joystick.knob.style.transform = `translate(${-40}px,${-40}px)`;
-      model.joystick.angle = null;
-      model.joystick.mag = "0";
-      model.joystick.dir = "NA";
-      touches = [];
-    },
-    cancel: (event: any) => {
-      event.preventDefault();
-      model.joystick.knob.style.transform = `translate(${-40}px,${-40}px)`;
-      model.joystick.angle = null;
-      model.joystick.mag = "0";
-      model.joystick.dir = "NA";
-      touches = [];
-    },
-    knob: <any>undefined,
-    mag: "0",
-    angle: "0",
-    dir: "NA",
-  }, */
+
+  /*input management*/
   keypresses: {
     fire: "NONE",
     direction: "NONE",
@@ -173,6 +82,50 @@ export let model = {
       model.holdInterval = undefined;
     }
   },
+
+  /*Getters*/
+  get lives3() {
+    return model.lives == 3;
+  },
+  get lives2() {
+    return model.lives >= 2;
+  },
+  get lives1() {
+    return model.lives >= 1;
+  },
+  get isGame() {
+    return model.gamestate == GameStates.GAME;
+  },
+  get isMenu() {
+    return model.gamestate == GameStates.MENU;
+  },
+  get isMobile() {
+    if (model.deviceType == DeviceType.IOS || model.deviceType == DeviceType.ANDROID) {
+      model.css.mobileCSSstring = " mobile";
+      return true;
+    } else {
+      model.css.mobileCSSstring = "";
+      return false;
+    }
+  },
+  get spawnPoint1() {
+    let cpX = model.entities[0].position.x + model.entities[0].size.x / 2;
+    let cpY = model.entities[0].position.y + model.entities[0].size.y / 2;
+    let radius = model.entities[0].size.x / 4;
+    let sx = radius * Math.cos(Vector.angle2rad(model.entities[0].angle + 10));
+    let sy = radius * Math.sin(Vector.angle2rad(model.entities[0].angle + 10));
+    return new Vector(cpX + sx, cpY + sy);
+  },
+  get spawnPoint2() {
+    let cpX = model.entities[0].position.x + model.entities[0].size.x / 2;
+    let cpY = model.entities[0].position.y + model.entities[0].size.y / 2;
+    let radius = model.entities[0].size.x / 4;
+    let sx = radius * Math.cos(Vector.angle2rad(model.entities[0].angle - 10));
+    let sy = radius * Math.sin(Vector.angle2rad(model.entities[0].angle - 10));
+    return new Vector(cpX + sx, cpY + sy);
+  },
+
+  /*HUD bindings */
   hud: {
     health: {
       get healthbar10() {
@@ -211,6 +164,19 @@ export let model = {
       fill: "74",
     },
   },
+
+  /*CSS styling*/
+  css: {
+    navButtonWidth: "23%",
+    navButtonBottom: "10px",
+    navButtonLeft: "10px",
+    fireButtonWidth: "10%",
+    fireButtonRight: "10px",
+    orientation: "landscape",
+    mobileCSSstring: "",
+    TitleFontSize: "3vw;",
+    mobileStartFonstSize: "4vw",
+  },
 };
 
 let template = `
@@ -234,6 +200,24 @@ UI.initialize(1000 / 60);
 const resizeScreen = (m = model) => {
   m.screenwidth = window.innerWidth;
   m.screenheight = window.innerHeight;
+  if (m.screenwidth < m.screenheight) {
+    m.css.orientation = "portrait";
+  }
+  if (m.isMobile && m.css.orientation == "portrait") {
+    m.css.navButtonBottom = "40px";
+    m.css.navButtonLeft = "20px";
+    m.css.navButtonWidth = "30%";
+    m.css.fireButtonWidth = "25%";
+    m.css.fireButtonRight = "20px";
+    m.css.TitleFontSize = "5vw";
+  } else if (m.isMobile && m.css.orientation == "landscape") {
+    m.css.navButtonBottom = "20px";
+    m.css.navButtonLeft = "10px";
+    m.css.navButtonWidth = "20%";
+    m.css.fireButtonWidth = "15%";
+    m.css.fireButtonRight = "10px";
+    m.css.TitleFontSize = "4vw";
+  }
 };
 
 export const init = (m = model) => {

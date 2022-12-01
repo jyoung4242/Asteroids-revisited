@@ -8,7 +8,7 @@ export class MenuState extends State {
   controller = new AbortController();
   static template = `
   <div class="content menu" \${===isMenu}>
-    <span class="title">ASTEROIDS PLUS 2.0</span>  
+    <span class="title" style="font-size: \${css.TitleFontSize};">ASTEROIDS PLUS 2.0</span>  
     <span class="deskopStart" \${!==isMobile}>PRESS ENTER KEY TO BEGIN</span>
     <span class="mobileStart" \${===isMobile}>TAP SCREEN TO BEGIN</span>
    </div>
