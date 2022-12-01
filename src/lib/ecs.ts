@@ -6,6 +6,7 @@ let Chance = require("chance");
 // Instantiate Chance so it can be used
 let chance = new Chance();
 const MAX_PLAYER_SPEED = 650;
+const MAX_PLAYER_SPEED_MOBILE = 325;
 
 import plr from "../assets/images/player1.png";
 import asteroid from "../assets/images/asteroid.png";
@@ -146,10 +147,12 @@ export class Player extends Entity {
     }
   }
   turnLeft() {
-    this.angle -= 3;
+    if (model.isMobile) this.angle -= 2;
+    else this.angle -= 3;
   }
   turnRight() {
-    this.angle += 3;
+    if (model.isMobile) this.angle += 2;
+    else this.angle += 3;
   }
   accelerate() {
     this.thrust = true;
@@ -197,16 +200,30 @@ export class Player extends Entity {
     //set thrust
     if (this.thrust) {
       //does velocity exceed max speed
-      if (this.velocity.x < MAX_PLAYER_SPEED && this.velocity.x > -MAX_PLAYER_SPEED)
-        this.velocity.x += Math.cos(this.angle2rad(this.travelAngle)) * updatetime * 125;
-      if (this.velocity.y < MAX_PLAYER_SPEED && this.velocity.y > -MAX_PLAYER_SPEED)
-        this.velocity.y += Math.sin(this.angle2rad(this.travelAngle)) * updatetime * 125;
+      if (model.isMobile) {
+        if (this.velocity.x < MAX_PLAYER_SPEED_MOBILE && this.velocity.x > -MAX_PLAYER_SPEED_MOBILE)
+          this.velocity.x += Math.cos(this.angle2rad(this.travelAngle)) * updatetime * 125;
+        if (this.velocity.y < MAX_PLAYER_SPEED_MOBILE && this.velocity.y > -MAX_PLAYER_SPEED_MOBILE)
+          this.velocity.y += Math.sin(this.angle2rad(this.travelAngle)) * updatetime * 125;
+      } else {
+        if (this.velocity.x < MAX_PLAYER_SPEED && this.velocity.x > -MAX_PLAYER_SPEED)
+          this.velocity.x += Math.cos(this.angle2rad(this.travelAngle)) * updatetime * 125;
+        if (this.velocity.y < MAX_PLAYER_SPEED && this.velocity.y > -MAX_PLAYER_SPEED)
+          this.velocity.y += Math.sin(this.angle2rad(this.travelAngle)) * updatetime * 125;
+      }
     }
     if (this.reverseThrust) {
-      if (this.velocity.x < MAX_PLAYER_SPEED && this.velocity.x > -MAX_PLAYER_SPEED)
-        this.velocity.x -= Math.cos(this.angle2rad(this.travelAngle)) * updatetime * 125;
-      if (this.velocity.y < MAX_PLAYER_SPEED && this.velocity.y > -MAX_PLAYER_SPEED)
-        this.velocity.y -= Math.sin(this.angle2rad(this.travelAngle)) * updatetime * 125;
+      if (model.isMobile) {
+        if (this.velocity.x < MAX_PLAYER_SPEED_MOBILE && this.velocity.x > -MAX_PLAYER_SPEED_MOBILE)
+          this.velocity.x -= Math.cos(this.angle2rad(this.travelAngle)) * updatetime * 125;
+        if (this.velocity.y < MAX_PLAYER_SPEED_MOBILE && this.velocity.y > -MAX_PLAYER_SPEED_MOBILE)
+          this.velocity.y -= Math.sin(this.angle2rad(this.travelAngle)) * updatetime * 125;
+      } else {
+        if (this.velocity.x < MAX_PLAYER_SPEED && this.velocity.x > -MAX_PLAYER_SPEED)
+          this.velocity.x -= Math.cos(this.angle2rad(this.travelAngle)) * updatetime * 125;
+        if (this.velocity.y < MAX_PLAYER_SPEED && this.velocity.y > -MAX_PLAYER_SPEED)
+          this.velocity.y -= Math.sin(this.angle2rad(this.travelAngle)) * updatetime * 125;
+      }
     }
 
     this.position.x += this.velocity.x * updatetime;

@@ -318,6 +318,7 @@ body {
 
 .LivesSection {
   position: absolute;
+  font-size: 1.2vw;
   top: 0.5%;
   left: 2%;
   display: flex;
@@ -327,6 +328,7 @@ body {
 
 .LevelSection {
   position: absolute;
+  font-size: 1.2vw;
   top: 0.5%;
   left: 50%;
   width: 10%;
@@ -335,6 +337,7 @@ body {
 
 .scoreSection {
   position: absolute;
+  font-size: 1.2vw;
   top: 0.5%;
   right: 2%;
 }
