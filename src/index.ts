@@ -70,7 +70,7 @@ export let model = {
     return new Vector(cpX + sx, cpY + sy);
   },
   entities: [],
-  joystick: {
+  /* joystick: {
     start: (event: any, model: any, element: any) => {
       event.preventDefault();
       touches = [];
@@ -122,10 +122,30 @@ export let model = {
     mag: "0",
     angle: "0",
     dir: "NA",
-  },
+  }, */
   keypresses: {
     fire: "NONE",
     direction: "NONE",
+  },
+  navStatus: "NONE",
+  nav: (event, model, element) => {
+    switch (element.id) {
+      case "left":
+        model.navStatus = "LEFT";
+        break;
+      case "right":
+        model.navStatus = "RIGHT";
+        break;
+      case "thrust":
+        model.navStatus = "THRUST";
+        break;
+      case "rthrust":
+        model.navStatus = "RTHRUST";
+        break;
+    }
+  },
+  stopnav: (event, model, element) => {
+    model.navStatus = "NONE";
   },
   button: {
     status: "released",

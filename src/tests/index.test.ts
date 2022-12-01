@@ -29,6 +29,26 @@ describe("run init routine", () => {
     else if (angle <= 0 && angle > -67.5) return "SE";
   };
   let localModel = {
+    navStatus: "NONE",
+    nav: (event, model, element) => {
+      switch (element.id) {
+        case "left":
+          model.navStatus = "LEFT";
+          break;
+        case "right":
+          model.navStatus = "RIGHT";
+          break;
+        case "thrust":
+          model.navStatus = "THRUST";
+          break;
+        case "rthrust":
+          model.navStatus = "RTHRUST";
+          break;
+      }
+    },
+    stopnav: (event, model, element) => {
+      model.navStatus = "NONE";
+    },
     mobileScale: "",
     statusIsVisible: false,
     statusmessage: "Start Game!",

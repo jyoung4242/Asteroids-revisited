@@ -130,16 +130,13 @@ export class PlayState extends State {
       </div>
     </div>
 
-    <div class="joystick" \${===isMobile}>
-        <div class="js_rel_cont">
-            <div class="knob"
-                \${==>joystick.knob}
-                \${touchstart@=>joystick.start}
-                \${touchmove@=>joystick.move}
-                \${touchend@=>joystick.end}
-                \${touchcancel@=>joystick.cancel}
-            ></div>    
-        </div>
+    <div class="navButtons" \${===isMobile}>
+      <div class="navRel">
+        <div id="left" class="touchbutton turnleft"  \${pointerdown@=>nav} \${pointerup@=>stopnav}\${}><span>L</span></div>
+        <div id="right" class="touchbutton turnright"  \${pointerdown@=>nav} \${pointerup@=>stopnav}><span>R</span></div>
+        <div id="thrust" class="touchbutton thrust"  \${pointerdown@=>nav} \${pointerup@=>stopnav}><span>F</span></div>
+        <div id="rthrust" class="touchbutton rthrust"  \${pointerdown@=>nav} \${pointerup@=>stopnav}><span>B</span></div>
+      </div>
     </div>
 
     <div class="buttonDiv" \${===isMobile}>
@@ -264,15 +261,11 @@ export class PlayState extends State {
 
     //check for input
     if (model.isMobile && model.entities[0]) {
-      //touch controls
-      if (model.joystick.dir == "NW" || model.joystick.dir == "W" || model.joystick.dir == "SW")
-        model.entities[0].turnLeft();
-      if (model.joystick.dir == "NE" || model.joystick.dir == "E" || model.joystick.dir == "SE")
-        model.entities[0].turnRight();
-      if (model.joystick.dir == "NE" || model.joystick.dir == "N" || model.joystick.dir == "NW")
-        model.entities[0].accelerate();
-      if (model.joystick.dir == "SE" || model.joystick.dir == "S" || model.joystick.dir == "SW") model.entities[0].reverse();
-      if (model.joystick.dir == "NA") model.entities[0].decelerate();
+      if (model.navStatus == "LEFT") model.entities[0].turnLeft();
+      if (model.navStatus == "RIGHT") model.entities[0].turnRight();
+      if (model.navStatus == "THRUST") model.entities[0].accelerate();
+      if (model.navStatus == "RTHRUST") model.entities[0].reverse();
+      if (model.navStatus == "NONE") model.entities[0].decelerate();
 
       if (model.button.status == "pressed" && !this.firelatch) {
         model.entities[0].fire();
