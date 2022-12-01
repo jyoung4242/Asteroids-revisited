@@ -157,7 +157,7 @@ body {
   border-radius: 50%;
   opacity: 0.75;
   border: 1px solid white;
-  rotate: -15deg;
+  rotate: -35deg;
 }
 .navRel {
   position: relative;
@@ -166,8 +166,8 @@ body {
 }
 
 .touchbutton {
-  width: 30%;
-  height: 30%;
+  width: 35%;
+  height: 35%;
   border: 1px solid white;
   border-radius: 50%;
   text-align: center;
@@ -177,23 +177,23 @@ body {
 }
 .turnleft {
   position: absolute;
-  top: 17%;
-  left: 17%;
+  top: 12%;
+  left: 12%;
 }
 .turnright {
   position: absolute;
-  bottom: 17%;
-  right: 17%;
+  bottom: 12%;
+  right: 12%;
 }
 .thrust {
   position: absolute;
-  top: 17%;
-  right: 17%;
+  top: 12%;
+  right: 12%;
 }
 .rthrust {
   position: absolute;
-  bottom: 17%;
-  left: 17%;
+  bottom: 12%;
+  left: 12%;
 }
 
 .js_rel_cont {
