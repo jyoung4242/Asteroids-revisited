@@ -56,7 +56,7 @@ export let model = {
   get spawnPoint1() {
     let cpX = model.entities[0].position.x + model.entities[0].size.x / 2;
     let cpY = model.entities[0].position.y + model.entities[0].size.y / 2;
-    let radius = model.entities[0].size.x / 2.125;
+    let radius = model.entities[0].size.x / 4;
     let sx = radius * Math.cos(Vector.angle2rad(model.entities[0].angle + 10));
     let sy = radius * Math.sin(Vector.angle2rad(model.entities[0].angle + 10));
     return new Vector(cpX + sx, cpY + sy);
@@ -64,7 +64,7 @@ export let model = {
   get spawnPoint2() {
     let cpX = model.entities[0].position.x + model.entities[0].size.x / 2;
     let cpY = model.entities[0].position.y + model.entities[0].size.y / 2;
-    let radius = model.entities[0].size.x / 2.125;
+    let radius = model.entities[0].size.x / 4;
     let sx = radius * Math.cos(Vector.angle2rad(model.entities[0].angle - 10));
     let sy = radius * Math.sin(Vector.angle2rad(model.entities[0].angle - 10));
     return new Vector(cpX + sx, cpY + sy);
