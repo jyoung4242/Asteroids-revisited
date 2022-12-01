@@ -10,8 +10,7 @@ const MAX_PLAYER_SPEED = 650;
 import plr from "../assets/images/player1.png";
 import asteroid from "../assets/images/asteroid.png";
 import bolt from "../assets/images/playerbullet.png";
-import { PlayState, HUDparameters, updateHudData } from "../states/game";
-import { createImportSpecifier } from "typescript";
+import { PlayState, HUDparameters, updateHudData, resetGame } from "../states/game";
 
 export class Vector {
   x: number;
@@ -67,6 +66,11 @@ export class Vector {
     this.x = magnitude * Math.cos(Vector.angle2rad(angle));
     this.y = magnitude * Math.sin(Vector.angle2rad(angle));
   }
+
+  setCoord(newX: number, newY: number) {
+    this.x = newX;
+    this.y = newY;
+  }
 }
 
 class Entity {
@@ -86,7 +90,7 @@ class Entity {
     this.id = uuidv4();
   }
 
-  update(deltatime: number) {}
+  update(deltatime: number, engine: any) {}
 }
 
 export class Player extends Entity {
@@ -105,11 +109,13 @@ export class Player extends Entity {
   centerpoint = new Vector(0, 0);
   invincibleTimer: number;
   ammoCounter = 0;
+  screenw: number;
+  screenh: number;
 
   constructor(screenw: number, screenh: number) {
     super("Player");
     this.type = "PLAYER";
-    this.health = 25;
+    this.health = 10;
     this.exp = 0;
     this.lives = 3;
     let tempSize = 0;
@@ -117,6 +123,9 @@ export class Player extends Entity {
     this.thrust = false;
     this.reverseThrust = false;
     this.radius;
+    this.screenh = screenh;
+    this.screenw = screenw;
+
     if (screenw <= screenh) tempSize = screenw / 13;
     else tempSize = screenh / 13;
     this.size.add({ x: tempSize, y: tempSize }, true);
@@ -135,10 +144,10 @@ export class Player extends Entity {
     }
   }
   turnLeft() {
-    this.angle -= 2;
+    this.angle -= 3;
   }
   turnRight() {
-    this.angle += 2;
+    this.angle += 3;
   }
   accelerate() {
     this.thrust = true;
@@ -165,7 +174,7 @@ export class Player extends Entity {
     }
   }
 
-  update(updatetime: number) {
+  update(updatetime: number, engine: any) {
     //burn off invincibility
     if (this.invincibleTimer > 0) {
       this.invincibleTimer -= updatetime;
@@ -221,12 +230,34 @@ export class Player extends Entity {
         updateHudData(HUDparameters.HEALTH, -1);
         if (this.health <= 0) {
           //die and reduce lives, and refresh .entities
+
+          model.entities = [model.entities[0]];
+          let tempSize;
+          engine.stopEngine();
+          if (this.screenw <= this.screenh) tempSize = this.screenw / 13;
+          else tempSize = this.screenh / 13;
+          this.position.setCoord(this.screenw / 2 - tempSize / 2, this.screenh / 2 - tempSize / 2);
+          this.velocity.setCoord(0, 0);
           this.lives -= 1;
-          this.health = 25;
-          model.health = 25;
+          this.health = 10;
+          model.health = 10;
           updateHudData(HUDparameters.LIVES, -1);
-          if (this.lives <= 0) {
+
+          if (this.lives < 0) {
             //game over
+            model.statusmessage = "GAME OVER";
+            model.statusIsVisible = true;
+            setTimeout(() => {
+              model.statusIsVisible = false;
+              resetGame();
+            }, 3000);
+          } else {
+            model.statusmessage = "DIED - BEGIN AGAIN";
+            model.statusIsVisible = true;
+            setTimeout(() => {
+              model.statusIsVisible = false;
+              engine.startEngine();
+            }, 1500);
           }
         }
         const vCollision = this.centerpoint.subtract(ast.centerpoint);
@@ -498,7 +529,7 @@ class Bullet extends Entity {
     if (spawnpoint) this.position = model.spawnPoint1;
     else this.position = model.spawnPoint2;
     this.position.y -= this.size.y / 2;
-    this.velocity.setPolar(5.5, this.angle);
+    this.velocity.setPolar(6.5, this.angle);
   }
 
   destroy() {

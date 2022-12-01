@@ -1,4 +1,4 @@
-import { State } from "./gameState";
+import { GameState, State } from "./gameState";
 import { Player, Asteroid } from "../lib/ecs";
 import { model, GameStates } from "..";
 import { Input } from "@peasy-lib/peasy-input";
@@ -42,6 +42,10 @@ export const updateHudData = (param: HUDparameters, incValue: number) => {
       model.health += incValue;
       break;
   }
+};
+
+export const resetGame = () => {
+  GameState.set("menu", "default", model);
 };
 
 const physicsInterval = 0.016;
@@ -112,6 +116,10 @@ export class PlayState extends State {
         <div class="expBar">
           <div class="expLevel" style="width:\${exp};"></div>
         </div>
+
+        <div class="statusMessage" \${===statusIsVisible}>
+          <span>\${statusmessage}</span>
+        </div>
         
       </div>
 
@@ -150,6 +158,9 @@ export class PlayState extends State {
     //*****************************
     //Set up game entities
     model.entities = [];
+    model.lives = 3;
+    model.gameLevel = 1;
+    model.score = 0;
     model.entities.push(new Player(model.screenwidth, model.screenheight));
 
     this.mapping = Input.map(
@@ -195,6 +206,12 @@ export class PlayState extends State {
       }
     );
 
+    model.statusmessage = "STARTING GAME!!";
+    model.statusIsVisible = true;
+    setTimeout(() => {
+      model.statusIsVisible = false;
+    }, 2000);
+
     //*****************************
     //make RAF call to the engine
     PlayState.running = true;
@@ -219,12 +236,26 @@ export class PlayState extends State {
     );
   }
 
+  stopEngine = () => {
+    PlayState.running = false;
+  };
+
+  startEngine = () => {
+    PlayState.running = true;
+    requestAnimationFrame(this.FixedStepEngine);
+  };
+
   FixedStepEngine = (timestamp: number) => {
     if (this.startime == undefined) {
       this.startime = timestamp;
       this.lasttime = timestamp;
     }
-    const deltaTime = (timestamp - this.lasttime) / 1000;
+    let deltaTime = (timestamp - this.lasttime) / 1000;
+    if (deltaTime > 1.5) {
+      deltaTime = 0;
+      this.lasttime = timestamp;
+    }
+
     model.fps = (1 / deltaTime).toFixed(2);
     this.lasttime = timestamp;
     this.lastPhysicsUpdate += deltaTime;
@@ -269,7 +300,7 @@ export class PlayState extends State {
     while (this.lastPhysicsUpdate >= physicsInterval) {
       //update physics here
       model.entities.forEach(ent => {
-        ent.update(this.lastPhysicsUpdate);
+        ent.update(this.lastPhysicsUpdate, this);
       });
       this.lastPhysicsUpdate -= physicsInterval;
     }

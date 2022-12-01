@@ -32,7 +32,9 @@ export let model = {
     return model.lives >= 1;
   },
   ammo: "100%",
-  health: 25,
+  statusIsVisible: false,
+  statusmessage: "Start Game!",
+  health: 10,
   exp: "0",
   gameLevel: 1,
   score: 0,
@@ -150,31 +152,31 @@ export let model = {
   hud: {
     health: {
       get healthbar10() {
-        return model.health > 23;
+        return model.health > 9;
       },
       get healthbar9() {
-        return model.health > 21;
-      },
-      get healthbar8() {
-        return model.health > 19;
-      },
-      get healthbar7() {
-        return model.health > 16;
-      },
-      get healthbar6() {
-        return model.health > 14;
-      },
-      get healthbar5() {
-        return model.health > 12;
-      },
-      get healthbar4() {
-        return model.health > 10;
-      },
-      get healthbar3() {
         return model.health > 8;
       },
-      get healthbar2() {
+      get healthbar8() {
+        return model.health > 7;
+      },
+      get healthbar7() {
+        return model.health > 6;
+      },
+      get healthbar6() {
         return model.health > 5;
+      },
+      get healthbar5() {
+        return model.health > 4;
+      },
+      get healthbar4() {
+        return model.health > 6;
+      },
+      get healthbar3() {
+        return model.health > 2;
+      },
+      get healthbar2() {
+        return model.health > 1;
       },
       get healthbar1() {
         return model.health > 0;
