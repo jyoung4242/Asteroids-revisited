@@ -103,6 +103,8 @@ body {
   border-radius: 50%;
   transform: rotate(-90deg);
   transform-origin: center;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .inner {
@@ -110,12 +112,16 @@ body {
   height: 100%;
   background-repeat: no-repeat;
   transform-origin: center;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .ASTEROID {
   position: fixed;
   /* border: 1px silver solid; */
   transform-origin: center;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .BULLET {
@@ -127,6 +133,8 @@ body {
   justify-content: flex-start;
   align-items: flex-start;
   transform-origin: center;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .joystick {
