@@ -253,6 +253,10 @@ body {
   left: 1%;
 }
 
+.HUD_Health.mobile {
+  left: 3%;
+}
+
 .HUD_Health_title {
   font-size: 1vw;
   font-family: Arial, Helvetica, sans-serif;
@@ -327,7 +331,7 @@ body {
   width: 2.5%;
   height: 30%;
   position: absolute;
-  right: 1%;
+  right: 1.5%;
   display: flex;
   flex-direction: column;
   justify-content: stretch;

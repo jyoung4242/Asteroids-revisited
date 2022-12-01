@@ -51,8 +51,15 @@ export let model = {
     return model.gamestate == GameStates.MENU;
   },
   get isMobile() {
-    return model.deviceType == DeviceType.IOS || model.deviceType == DeviceType.ANDROID;
+    if (model.deviceType == DeviceType.IOS || model.deviceType == DeviceType.ANDROID) {
+      model.mobileCSSstring = " mobile";
+      return true;
+    } else {
+      model.mobileCSSstring = "";
+      return false;
+    }
   },
+  mobileCSSstring: "",
   get spawnPoint1() {
     let cpX = model.entities[0].position.x + model.entities[0].size.x / 2;
     let cpY = model.entities[0].position.y + model.entities[0].size.y / 2;

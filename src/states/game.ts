@@ -69,7 +69,7 @@ export class PlayState extends State {
   <div class="content" \${===isGame}>
       
     <div>
-      <div class="HUD_Health">
+      <div class="HUD_Health \${mobileCSSstring}">
         <span class="HUD_Health_title">HEALTH</span>
         <div class="healthflex">
           <div class="greenHealthbar healthbar10" \${===hud.health.healthbar10}></div>
