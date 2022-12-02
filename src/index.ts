@@ -5,6 +5,7 @@ import { MenuState } from "./states/menu";
 import { PlayState } from "./states/game";
 import { Vector } from "./lib/ecs";
 import { BGM, SFX } from "./lib/sound";
+import { UsageState } from "webpack";
 
 let touches = [];
 
@@ -197,8 +198,10 @@ let template = `
 // our resize function
 
 const UA = navigator.userAgent.toLowerCase();
+console.log(UA);
 if (UA.indexOf("android") > -1) model.deviceType = DeviceType.ANDROID;
 else if (UA.indexOf("iphone") > -1) model.deviceType = DeviceType.IOS;
+else if (UA.indexOf("ipad") > -1) model.deviceType = DeviceType.IOS;
 else model.deviceType = DeviceType.DESKTOP;
 
 UI.create(document.body, template, model);
