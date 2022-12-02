@@ -12,8 +12,10 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/howler": "^2.2.7",
     "@types/jest": "^29.2.3",
     "css-loader": "^6.7.1",
+    "file-loader": "^6.2.0",
     "html-webpack-plugin": "^5.5.0",
     "jest": "^29.3.1",
     "json": "^11.0.0",
@@ -30,6 +32,7 @@
     "@peasy-lib/peasy-lighting": "^0.2.3",
     "@peasy-lib/peasy-ui": "^0.9.19",
     "chance": "^1.1.9",
+    "howler": "^2.2.3",
     "jest-environment-jsdom": "^29.3.1",
     "uuid": "^9.0.0"
   }

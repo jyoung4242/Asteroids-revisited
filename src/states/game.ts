@@ -1,6 +1,6 @@
 import { GameState, State } from "./gameState";
 import { Player, Asteroid } from "../lib/ecs";
-import { model, GameStates } from "..";
+import { model, GameStates, bgm, sfx } from "..";
 import { Input } from "@peasy-lib/peasy-input";
 //import { Lighting, Vector, Light } from "@peasy-lib/peasy-lighting";
 

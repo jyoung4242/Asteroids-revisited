@@ -4,6 +4,7 @@ import { GameState } from "./states/gameState";
 import { MenuState } from "./states/menu";
 import { PlayState } from "./states/game";
 import { Vector } from "./lib/ecs";
+import { BGM, SFX } from "./lib/sound";
 
 let touches = [];
 
@@ -181,6 +182,9 @@ export let model = {
     barTop: "3vw",
   },
 };
+
+export const bgm = new BGM();
+export const sfx = new SFX();
 
 let template = `
 <div id="game" class="gameContainer">

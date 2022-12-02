@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { model } from "..";
+import { model, bgm, sfx } from "..";
 
 // Load Chance
 let Chance = require("chance");
@@ -139,6 +139,7 @@ export class Player extends Entity {
   }
   fire() {
     if (this.ammo > 0) {
+      sfx.play("playerfire");
       this.gunToggle = !this.gunToggle;
       model.entities.push(new Bullet(this.gunToggle, this.angle, this.size));
       this.ammo -= 1;
@@ -243,13 +244,13 @@ export class Player extends Entity {
       if (distance < this.radius * 0.95 + ast.radius * 0.95) {
         if (this.invincibleTimer > 0) return;
         //we have a collision
-
+        sfx.play("ship2asteroid");
         this.health -= 1;
         this.invincibleTimer = 3;
         updateHudData(HUDparameters.HEALTH, -1);
         if (this.health <= 0) {
           //die and reduce lives, and refresh .entities
-
+          sfx.play("astBoom");
           model.entities = [model.entities[0]];
           let tempSize;
           engine.stopEngine();
@@ -469,7 +470,7 @@ export class Asteroid extends Entity {
 
       if (distance < this.radius * 0.95 + ast.radius * 0.95) {
         //we have a collision
-
+        sfx.play(chance.pickone(["col1", "col2", "col3"]));
         const vCollision = this.centerpoint.subtract(ast.centerpoint);
         const vdistance = vCollision.getMag();
         const vCollisionNormal = vCollision.normalize();
@@ -503,12 +504,14 @@ export class Asteroid extends Entity {
 
       if (distance < this.radius * 0.75 + bullet.radius) {
         //we have a collision
+        sfx.play("targetHit");
         console.warn("BULLET COLLISION");
         bullet.destroy();
         updateHudData(HUDparameters.SCORE, 5);
         this.health -= bullet.damage;
         if (this.health <= 0) {
           this.destroy();
+          sfx.play("astBoom");
           updateHudData(HUDparameters.SCORE, this.reward);
           model.entities[0].exp += this.reward;
 

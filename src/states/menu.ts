@@ -1,5 +1,5 @@
 import { GameState, State } from "./gameState";
-import { GameStates } from "..";
+import { GameStates, bgm, sfx } from "..";
 import { Input } from "@peasy-lib/peasy-input";
 
 export class MenuState extends State {
@@ -48,6 +48,7 @@ export class MenuState extends State {
   }
 
   public async exit(_next: State, ...params: any) {
+    bgm.play();
     const [model] = params;
     if (this.mapping) this.mapping.unmap();
     model.gamestate = "transition";
