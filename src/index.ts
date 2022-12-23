@@ -6,8 +6,10 @@ import { PlayState } from "./states/game";
 import { Vector } from "./lib/ecs";
 import { BGM, SFX } from "./lib/sound";
 import { UsageState } from "webpack";
+import { BackGround } from "./lib/background";
 
 let touches = [];
+let myBackGround;
 
 enum DeviceType {
   IOS = "ios:",
@@ -189,6 +191,7 @@ export const sfx = new SFX();
 
 let template = `
 <div id="game" class="gameContainer">
+  <canvas id="cnv"></canvas>
   ${MenuState.template}    
   ${PlayState.template}
 </div>`;
@@ -240,6 +243,11 @@ export const init = (m = model) => {
   resizeScreen(m);
   GameState.create(MenuState, PlayState);
   GameState.set("menu", "default", model);
+  myBackGround = new BackGround("cnv", UI);
+  setTimeout(() => {
+    myBackGround.fillCanvas();
+    window.requestAnimationFrame(myBackGround.update);
+  }, 250);
 };
 
 function loadEventHandler(e: any) {
