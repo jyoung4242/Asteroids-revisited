@@ -188,10 +188,10 @@ export let model = {
 
 export const bgm = new BGM();
 export const sfx = new SFX();
-
+// <canvas id="cnv"></canvas>
 let template = `
 <div id="game" class="gameContainer">
-  <canvas id="cnv"></canvas>
+ 
   ${MenuState.template}    
   ${PlayState.template}
 </div>`;
