@@ -160,9 +160,9 @@ export class BackGround {
       let amplitude = 1;
       for (let i = 0; i < octaves; i++) {
         value += noise2D(x, y) * amplitude;
-        x *= 0.2;
-        y *= 0.2;
-        amplitude *= 0.5;
+        x *= 0.001;
+        y *= 0.002;
+        amplitude *= 1;
       }
       return value;
     };
@@ -403,6 +403,7 @@ export class BackGround {
       galaxy.velocity.y = this.chance.floating({ min: -0.01, max: 0.005 });
     }
     const sx = galaxy.frame * 32;
+
     this.ctx.drawImage(this.galaxyImage, sx, 0, 32, 32, newX, newY, 32, 32);
   };
 
@@ -432,24 +433,17 @@ export class BackGround {
 
   fillCanvas = () => {
     const RGBarray = [];
-    for (let i = 0; i < this.canvasData.data.length; i += 4) {
-      //get x,y for this point
-      //const nX = i % this.canvasData.width;
-      //const nY = i % this.canvasData.height;
-      const nX = ((i % this.canvasData.width) * 4) / 4;
-      const nY = Math.floor(i / (this.canvasData.width * 4));
-
-      const noisePoint = (this.noise2d(nX, nY) + 1) * 0.5;
-      let [r, g, b] = this.colorScale(noisePoint).rgb();
-      RGBarray.push({ r, g, b });
-      this.canvasData.data[i] = r;
-      this.canvasData.data[i + 1] = g;
-      this.canvasData.data[i + 2] = b;
-      this.canvasData.data[i + 3] = 255;
+    console.log("entering loop");
+    for (let tempX = 0; tempX < this.canvasWidth; tempX++) {
+      for (let tempY = 0; tempY < this.canvasHeight; tempY++) {
+        let [r, g, b] = this.colorScale((this.noise2d(tempX, tempY) + 1) * 0.5).rgb();
+        this.canvasData.data[(tempX + tempY * this.canvasWidth) * 4 + 0] = r;
+        this.canvasData.data[(tempX + tempY * this.canvasWidth) * 4 + 1] = g;
+        this.canvasData.data[(tempX + tempY * this.canvasWidth) * 4 + 2] = b;
+        this.canvasData.data[(tempX + tempY * this.canvasWidth) * 4 + 3] = 255;
+      }
     }
-    console.log("datacopy being set");
     this.dataCopy = new Uint8ClampedArray(this.canvasData.data);
-    console.log(RGBarray);
   };
 
   update = (timestamp: number) => {
@@ -474,7 +468,7 @@ export class BackGround {
       this.starmap2.forEach(star => this.drawStar(star));
       this.starmap3.forEach(star => this.drawStar(star));
       this.ctx.putImageData(this.canvasData, 0, 0);
-
+      this.ctx.globalAlpha = 0.5;
       this.galaxies.forEach(gal => {
         gal.tik += 1;
         if (gal.tik >= 50) {
@@ -484,6 +478,7 @@ export class BackGround {
         if (gal.frame >= 5) gal.frame = 0;
         this.drawGalaxy(gal);
       });
+      this.ctx.globalAlpha = 1;
 
       this.lastRenderUpdate -= this.renderInterval;
     }
