@@ -247,7 +247,7 @@ export const init = (m = model) => {
   setTimeout(() => {
     myBackGround.fillCanvas();
     window.requestAnimationFrame(myBackGround.update);
-  }, 250);
+  }, 500);
 };
 
 function loadEventHandler(e: any) {
