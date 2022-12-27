@@ -244,8 +244,8 @@ export const init = (m = model) => {
   GameState.create(MenuState, PlayState);
   GameState.set("menu", "default", model);
   myBackGround = new BackGround("cnv", UI);
+  myBackGround.fillCanvas();
   setTimeout(() => {
-    myBackGround.fillCanvas();
     window.requestAnimationFrame(myBackGround.update);
   }, 500);
 };
