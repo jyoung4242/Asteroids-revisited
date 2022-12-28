@@ -208,7 +208,7 @@ else if (UA.indexOf("ipad") > -1) model.deviceType = DeviceType.IOS;
 else model.deviceType = DeviceType.DESKTOP;
 
 UI.create(document.body, template, model);
-UI.initialize(1000 / 60);
+UI.initialize(false);
 
 const resizeScreen = (m = model) => {
   m.screenwidth = window.innerWidth;
