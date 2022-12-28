@@ -479,7 +479,6 @@ export class BackGround {
         this.drawGalaxy(gal);
       });
       this.ctx.globalAlpha = 1;
-
       this.lastRenderUpdate -= this.renderInterval;
     }
     requestAnimationFrame(this.update);

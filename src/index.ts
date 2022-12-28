@@ -1,11 +1,11 @@
 import "./style.css";
 import { UI } from "@peasy-lib/peasy-ui";
+import { Physics } from "@peasy-lib/peasy-physics";
 import { GameState } from "./states/gameState";
 import { MenuState } from "./states/menu";
 import { PlayState } from "./states/game";
 import { Vector } from "./lib/ecs";
 import { BGM, SFX } from "./lib/sound";
-import { UsageState } from "webpack";
 import { BackGround } from "./lib/background";
 
 let touches = [];
@@ -201,7 +201,6 @@ let template = `
 // our resize function
 
 const UA = navigator.userAgent.toLowerCase();
-console.log(UA);
 if (UA.indexOf("android") > -1) model.deviceType = DeviceType.ANDROID;
 else if (UA.indexOf("iphone") > -1) model.deviceType = DeviceType.IOS;
 else if (UA.indexOf("ipad") > -1) model.deviceType = DeviceType.IOS;
@@ -260,14 +259,3 @@ function resizeEventHandler(e: any) {
 
 window.addEventListener("load", loadEventHandler, false);
 window.addEventListener("resize", resizeEventHandler, false);
-
-const angle2direction = (angle: number): string => {
-  if ((angle >= 0 && angle < 22.5) || (angle <= 0 && angle > -22.5)) return "E";
-  else if (angle >= 0 && angle < 67.5) return "NE";
-  else if (angle >= 67.5 && angle < 112.5) return "N";
-  else if (angle >= 112.5 && angle < 157.5) return "NW";
-  else if ((angle >= 157.5 && angle < 180.1) || (angle <= -157.5 && angle > -180.1)) return "W";
-  else if (angle <= -112.5 && angle > -157.5) return "SW";
-  else if (angle <= -67.5 && angle > -112.5) return "S";
-  else if (angle <= 0 && angle > -67.5) return "SE";
-};
