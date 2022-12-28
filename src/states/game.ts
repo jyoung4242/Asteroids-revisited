@@ -3,6 +3,8 @@ import { Player, Asteroid } from "../lib/ecs";
 import { model, GameStates, bgm, sfx } from "..";
 import { Input } from "@peasy-lib/peasy-input";
 import { Physics } from "@peasy-lib/peasy-physics";
+import { Enemy } from "../lib/AI";
+//import { Lighting, Vector, Light } from "@peasy-lib/peasy-lighting";
 
 // Load Chance
 let Chance = require("chance");
@@ -20,6 +22,13 @@ export enum HUDparameters {
 //Level progression and spawn rate
 let spawnRate = 7.5;
 let spawnTimer = 0;
+let enemySpawnRate = 45;
+let enemySpawnTimer = 0;
+let enemySpawnedFlag: boolean = false;
+
+export const clearEnemySpawnFlag = () => {
+  enemySpawnedFlag = false;
+};
 
 export const updateHudData = (param: HUDparameters, incValue: number) => {
   switch (param) {
@@ -250,6 +259,9 @@ export class PlayState extends State {
     this.lastPhysicsUpdate += deltaTime;
     this.lastRenderUpdate += deltaTime;
     spawnTimer += deltaTime;
+    if (model.gameLevel > 5 && !enemySpawnedFlag) {
+      enemySpawnTimer += deltaTime;
+    }
 
     //check for input
     if (model.isMobile && model.entities[0]) {
@@ -283,9 +295,15 @@ export class PlayState extends State {
 
     //generate new Asteroid
     if (spawnTimer >= spawnRate) {
-      console.log("spawning");
       spawnTimer = 0;
       Asteroid.spawn();
+    }
+
+    //generate new Enemy
+    if (enemySpawnTimer >= enemySpawnRate) {
+      enemySpawnTimer = 0;
+      enemySpawnedFlag = true;
+      Enemy.spawn();
     }
 
     while (this.lastPhysicsUpdate >= physicsInterval) {
