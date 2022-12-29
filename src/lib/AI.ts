@@ -2,7 +2,7 @@ import { Entity, Vector, enemyBullet } from "./ecs";
 import { model, sfx } from "..";
 import enemyImage from "../assets/images/enemy.png";
 import { pathsToModuleNameMapper } from "ts-jest";
-import { HUDparameters, updateHudData, resetGame } from "../states/game";
+import { HUDparameters, updateHudData, resetGame, clearEnemySpawnFlag } from "../states/game";
 
 // Load Chance
 let Chance = require("chance");
@@ -10,6 +10,8 @@ let chance = new Chance();
 let bulletCollisionDetected: boolean = false;
 let asteroidCollisionDetected: boolean = false;
 let playerDetected: boolean = false;
+let enemyPatrolling: boolean = false;
+let patrolDestination: Vector;
 
 let bulletToEvade: Entity | null = null;
 let asteroidToEvade: Enemy | null = null;
@@ -20,8 +22,8 @@ let attackAngle: number | null = null;
 let newHeading: Vector | null = null;
 let newAngle: number | null = null;
 
-const MAX_PLAYER_SPEED = 650;
-const MAX_PLAYER_SPEED_MOBILE = 325;
+const MAX_PLAYER_SPEED = 80;
+const MAX_PLAYER_SPEED_MOBILE = 80;
 
 enum enemyAIStates {
   IDLE,
@@ -52,6 +54,8 @@ enum patrollingStates {
   WAYPOINT,
   TURNING,
   MOVING,
+  NAVIGATING,
+  STOPPING,
 }
 
 export class Enemy extends Entity {
@@ -79,8 +83,8 @@ export class Enemy extends Entity {
     this.type = "ENEMY";
     this.health = 10;
     this.reward = 50;
-    this.screenh = w;
-    this.screenw = h;
+    this.screenh = h;
+    this.screenw = w;
     let tempSize = 0;
 
     if (w <= h) tempSize = w / 13;
@@ -94,22 +98,22 @@ export class Enemy extends Entity {
       case 0:
         //left side
         tempX = 0;
-        tempY = chance.integer({ min: 0, max: h });
+        tempY = chance.integer({ min: 0, max: h - this.size.y });
         break;
       case 1:
         //top side
-        tempX = chance.integer({ min: 0, max: w });
+        tempX = chance.integer({ min: 0, max: w - this.size.x });
         tempY = 0;
         break;
       case 2:
         //right side
-        tempX = w;
-        tempY = chance.integer({ min: 0, max: h });
+        tempX = w - this.size.x;
+        tempY = chance.integer({ min: 0, max: h - this.size.y });
         break;
       case 3:
         //bottom side
-        tempX = chance.integer({ min: 0, max: w });
-        tempY = h;
+        tempX = chance.integer({ min: 0, max: w - this.size.x });
+        tempY = h - this.size.y;
         break;
     }
     this.position.add({ x: tempX, y: tempY }, true);
@@ -151,6 +155,13 @@ export class Enemy extends Entity {
   };
 
   update(updatetime) {
+    /*diagnostic, set enemy state string */
+    model.enemystate = this.enemyState.toString();
+    model.patrolstate = this.patrolState.toString();
+    model.attackstate = this.attackState.toString();
+    model.evadestate = this.evastionState.toString();
+    model.espeed = this.velocity.getMag().toString();
+
     //****************************************** */
     //burn off invincibility
     //***************************************** */
@@ -180,17 +191,42 @@ export class Enemy extends Entity {
     if (this.thrust) {
       //does velocity exceed max speed
       if (model.isMobile) {
-        if (this.velocity.x < MAX_PLAYER_SPEED_MOBILE && this.velocity.x > -MAX_PLAYER_SPEED_MOBILE)
+        if (this.velocity.x < MAX_PLAYER_SPEED_MOBILE && this.velocity.x > -MAX_PLAYER_SPEED_MOBILE) {
           this.velocity.x += Math.cos(this.ang2Rad(this.travelAngle)) * updatetime * 125;
-        if (this.velocity.y < MAX_PLAYER_SPEED_MOBILE && this.velocity.y > -MAX_PLAYER_SPEED_MOBILE)
+          console.log("adding thrust");
+        }
+        if (this.velocity.y < MAX_PLAYER_SPEED_MOBILE && this.velocity.y > -MAX_PLAYER_SPEED_MOBILE) {
           this.velocity.y += Math.sin(this.ang2Rad(this.travelAngle)) * updatetime * 125;
+          console.log("adding thrust");
+        }
       } else {
-        if (this.velocity.x < MAX_PLAYER_SPEED && this.velocity.x > -MAX_PLAYER_SPEED)
+        if (this.velocity.x < MAX_PLAYER_SPEED && this.velocity.x > -MAX_PLAYER_SPEED) {
           this.velocity.x += Math.cos(this.ang2Rad(this.travelAngle)) * updatetime * 125;
-        if (this.velocity.y < MAX_PLAYER_SPEED && this.velocity.y > -MAX_PLAYER_SPEED)
+          console.log("adding thrust");
+        }
+        if (this.velocity.y < MAX_PLAYER_SPEED && this.velocity.y > -MAX_PLAYER_SPEED) {
           this.velocity.y += Math.sin(this.ang2Rad(this.travelAngle)) * updatetime * 125;
+          console.log("adding thrust");
+        }
       }
     }
+    if (this.reversethrust) {
+      console.log(`travel angle: ${this.travelAngle}`);
+      console.log(`new x component: ${Math.cos(this.ang2Rad(this.travelAngle))}`);
+      console.log(`new y component: ${Math.sin(this.ang2Rad(this.travelAngle))}`);
+      if (model.isMobile) {
+        if (this.velocity.x < MAX_PLAYER_SPEED_MOBILE && this.velocity.x > -MAX_PLAYER_SPEED_MOBILE)
+          this.velocity.x -= Math.cos(this.ang2Rad(this.travelAngle)) * updatetime * 125;
+        if (this.velocity.y < MAX_PLAYER_SPEED_MOBILE && this.velocity.y > -MAX_PLAYER_SPEED_MOBILE)
+          this.velocity.y -= Math.sin(this.ang2Rad(this.travelAngle)) * updatetime * 125;
+      } else {
+        if (this.velocity.x < MAX_PLAYER_SPEED + 10 && this.velocity.x > -(MAX_PLAYER_SPEED + 10))
+          this.velocity.x -= Math.cos(this.ang2Rad(this.travelAngle)) * updatetime * 125;
+        if (this.velocity.y < MAX_PLAYER_SPEED + 10 && this.velocity.y > -(MAX_PLAYER_SPEED + 10))
+          this.velocity.y -= Math.sin(this.ang2Rad(this.travelAngle)) * updatetime * 125;
+      }
+    }
+
     this.position.x += this.velocity.x * updatetime;
     this.position.y += this.velocity.y * updatetime;
     this.centerpoint.x = this.position.x + this.size.x / 2;
@@ -223,6 +259,7 @@ export class Enemy extends Entity {
           sfx.play("astBoom");
           const myIndex = model.entities.findIndex(e => e.id == this.id);
           model.entities.splice(myIndex, 1);
+          clearEnemySpawnFlag();
         }
 
         const vCollision = this.centerpoint.subtract(ast.centerpoint);
@@ -271,6 +308,7 @@ export class Enemy extends Entity {
           model.entities.splice(myIndex, 1);
           //give ammo bonus
           model.entities[0].ammoBonus();
+          clearEnemySpawnFlag();
         }
       }
     });
@@ -387,7 +425,7 @@ export class Enemy extends Entity {
         /*************************************************** */
         const detectionVector: Vector = new Vector(this.screenw / 4, this.screenh / 4);
         const detectionMagnitude = detectionVector.getMag();
-        const playerDistance = model.entities[0].position.distance(this.position);
+        const playerDistance = model.entities[0].position.getDistance(this.position);
         if (playerDistance < detectionMagnitude) {
           //player is close enough to detect
           playerDetected = true;
@@ -425,7 +463,7 @@ export class Enemy extends Entity {
                 this.angle -= 1;
                 break;
               }
-            }
+            } else this.evastionState = evasionStates.MOVING;
             break;
           case evasionStates.MOVING:
             this.stateTik += 1;
@@ -474,7 +512,7 @@ export class Enemy extends Entity {
                 this.angle -= 1;
                 break;
               }
-            }
+            } else this.evastionState = evasionStates.MOVING;
             break;
           case evasionStates.MOVING:
             this.stateTik += 1;
@@ -501,29 +539,40 @@ export class Enemy extends Entity {
             break;
           case attackStates.TRACKING:
             vAttack = this.position.subtract(model.entities[0].position);
+            console.log("TRACKNIG");
+            console.log("this.position", this.position.x, this.position.y);
+            console.log("player position", model.entities[0].position.x, model.entities[0].position.y);
+            console.log("attack vector", vAttack.x, vAttack.y);
             thetaAttack = vAttack.getAngle();
-            attackAngle = thetaAttack + 180;
+            attackAngle = thetaAttack;
+            console.log("new angle: ", thetaAttack);
+
+            //attackAngle = thetaAttack + 180;
             this.attackState = attackStates.TURNING;
             break;
           case attackStates.TURNING:
+            console.log("in turning: new angle/this.angle: ", attackAngle, this.angle);
             if (this.angle != attackAngle) {
-              const gap = attackAngle - this.angle;
-              if (gap == 0) {
+              const gap = (attackAngle - this.angle) % 360;
+              console.log("gap", gap, attackAngle, this.angle);
+              if (gap <= 5 && gap >= -5) {
                 this.attackState = attackStates.FIRING;
                 break;
               }
               if (gap <= 0) {
-                this.angle += 1;
+                this.angle -= 2.5;
                 break;
               } else {
-                this.angle -= 1;
+                this.angle += 2.5;
                 break;
               }
-            }
+            } else this.attackState = attackStates.FIRING;
             break;
+
           case attackStates.FIRING:
             if (this.ammo > 0) {
               sfx.play("playerfire");
+              console.log("FIRING: ", this.angle);
               model.entities.push(new enemyBullet(this.position, this.angle, this.size));
               this.ammo -= 1;
               const displayedAmmo = ((this.ammo / 25) * 100).toFixed(1);
@@ -551,7 +600,7 @@ export class Enemy extends Entity {
         switch (this.patrolState) {
           case patrollingStates.IDLE:
             this.stateTik += 1;
-            if (this.stateTik >= 10) {
+            if (this.stateTik >= 5) {
               this.stateTik = 0;
               this.patrolState = patrollingStates.WAYPOINT;
             }
@@ -562,6 +611,7 @@ export class Enemy extends Entity {
             /**********************************************
              * determining the vector of where we're going
              **********************************************/
+            if (enemyPatrolling) this.patrolState = patrollingStates.NAVIGATING;
             let currentQuadrant: number;
             if (this.position.x >= this.screenw / 2) {
               //right side
@@ -574,6 +624,8 @@ export class Enemy extends Entity {
             }
             const quadrantArray = [1, 2, 3, 4].filter(q => q != currentQuadrant);
             const targetQuadrant = chance.pickone(quadrantArray);
+            console.log("screensize: ", this.screenw, this.screenh);
+            console.log("enemy position: ", this.position.x, this.position.y);
             const vectorMap = {
               1: new Vector(0.25 * this.screenw, 0.25 * this.screenh),
               2: new Vector(0.75 * this.screenw, 0.25 * this.screenh),
@@ -581,40 +633,88 @@ export class Enemy extends Entity {
               4: new Vector(0.75 * this.screenw, 0.75 * this.screenh),
             };
             const targetVector = vectorMap[targetQuadrant];
-            newHeading = this.position.subtract(targetVector);
+            patrolDestination = targetVector;
+            const adjustedPosition = this.position.add({ x: this.size.x / 2, y: this.size.y / 2 }, false);
+            newHeading = adjustedPosition.subtract(targetVector);
+            // newHeading.x = -newHeading.x;
+            console.log("new heading", newHeading.x, newHeading.y);
+            //newHeading = targetVector.subtract(this.position);
             newAngle = newHeading.getAngle();
+            console.log("newangle: ", newAngle);
             this.patrolState = patrollingStates.TURNING;
+            enemyPatrolling = true;
+            console.log(
+              `waypoint determined: qaud: ${targetQuadrant} target V: ${targetVector.x}, ${targetVector.y}, new heading/angle: ${newHeading.x},${newHeading.y} /angle: ${newAngle}`
+            );
             break;
 
           case patrollingStates.TURNING:
+            console.log("in turning: new angle/this.angle: ", newAngle, this.angle);
             if (this.angle != newAngle) {
-              const gap = newAngle - this.angle;
-              if (gap == 0) {
+              const gap = (newAngle - this.angle) % 360;
+              console.log("gap", gap, newAngle, this.angle);
+              if (gap <= 3 && gap >= -3) {
                 this.patrolState = patrollingStates.MOVING;
                 break;
               }
               if (gap <= 0) {
-                this.angle += 1;
+                this.angle += 2.5;
                 break;
               } else {
-                this.angle -= 1;
+                this.angle -= 2.5;
+                break;
+              }
+            } else this.patrolState = patrollingStates.MOVING;
+            break;
+          case patrollingStates.MOVING:
+            if (patrolDestination.getDistance(this.position) < 100) {
+              if (this.velocity.getMag() > 5) {
+                //slow down
+                this.reversethrust = true;
+                this.thrust = false;
                 break;
               }
             }
-            break;
-          case patrollingStates.MOVING:
-            this.stateTik += 1;
+            console.log("MOVING");
             this.thrust = true;
             this.travelAngle = this.angle;
-            if (this.stateTik >= 15) {
-              this.stateTik = 0;
+            if (this.velocity.getMag() >= MAX_PLAYER_SPEED) {
+              this.patrolState = patrollingStates.NAVIGATING;
               this.thrust = false;
-              this.patrolState = patrollingStates.IDLE;
-              this.enemyState = enemyAIStates.SCANNING;
-              newHeading = null;
-              newAngle = null;
             }
+
             break;
+          case patrollingStates.NAVIGATING:
+            console.log("navigating");
+            this.thrust = false;
+            this.travelAngle = this.angle;
+            //get distance to quadrant
+            const distance = this.position.getDistance(patrolDestination);
+            console.log("distance remaining ", distance);
+            model.distanceToDest = distance.toString();
+            console.log("speed", this.velocity.getMag());
+            console.log("velocity vector", this.velocity.x, this.velocity.y);
+            if (distance < 50) this.patrolState = patrollingStates.STOPPING;
+            break;
+          case patrollingStates.STOPPING:
+            console.log("slowing down");
+            if (this.velocity.getMag() > 5) {
+              this.travelAngle = this.angle;
+              console.log("reversing");
+              console.log("speed", this.velocity.getMag());
+              console.log("velocity vector", this.velocity.x, this.velocity.y);
+              this.thrust = false;
+              this.reversethrust = true;
+            } else if (this.velocity.getMag() < 5) {
+              console.log("no thrust");
+              console.log("speed", this.velocity.getMag());
+              console.log("velocity vector", this.velocity.x, this.velocity.y);
+              this.velocity.setPolar(0, 0);
+              this.travelAngle = this.angle;
+              this.thrust = false;
+              this.reversethrust = false;
+              this.patrolState = patrollingStates.IDLE;
+            }
             break;
         }
 

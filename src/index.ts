@@ -25,6 +25,12 @@ export enum GameStates {
 }
 
 export let model = {
+  enemystate: "",
+  patrolstate: "",
+  attackstate: "",
+  evadestate: "",
+  espeed: "",
+  distanceToDest: "",
   //Globals
   mobileScale: "",
   lives: 3,

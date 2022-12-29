@@ -22,7 +22,7 @@ export enum HUDparameters {
 //Level progression and spawn rate
 let spawnRate = 7.5;
 let spawnTimer = 0;
-let enemySpawnRate = 45;
+let enemySpawnRate = 3;
 let enemySpawnTimer = 0;
 let enemySpawnedFlag: boolean = false;
 
@@ -59,7 +59,7 @@ export const resetGame = () => {
   GameState.set("menu", "default", model);
 };
 
-const physicsInterval = 0.016;
+const physicsInterval = 0.016; //.016
 
 export class PlayState extends State {
   startime: number | undefined = undefined;
@@ -125,7 +125,8 @@ export class PlayState extends State {
       </div>
 
     </div>
-    <span class="diag">FPS: \${fps}</span><span><span>  
+    <span class="diag">FPS: \${fps}  Enemy State: \${enemystate} Patrol State: \${patrolstate} Attack State: \${attackstate} Evade State: \${evadestate} E speeed: \${espeed}  distance: \${distanceToDest}</span>  
+
     <div class="\${entity.type}" \${entity<=*entities:id} style="top: \${entity.position.y}px; left: \${entity.position.x}px; width: \${entity.size.x}px; height: \${entity.size.y}px; transform: scale(\${entity.mobileScaling}) ">
       <div class="inner" style="rotate: \${entity.angle}deg; background-image:url(\${entity.texture});background-position: \${entity.ssPosition};background-size:\${entity.textureSize};">
       </div>
@@ -173,6 +174,7 @@ export class PlayState extends State {
         d: { action: "right", repeat: true },
         Enter: { action: "fire", repeat: false },
         Shift: { action: "fire", repeat: false },
+        Escape: { action: "pause", repeat: false },
       },
       (action: string, doing: boolean) => {
         if (doing) {
@@ -192,6 +194,9 @@ export class PlayState extends State {
             case "fire":
               model.keypresses.fire = "FIRE";
               break;
+            case "pause":
+              if (PlayState.running == true) this.stopEngine();
+              else this.startEngine();
             default:
               model.keypresses.direction = "NONE";
               model.keypresses.fire = "NONE";
@@ -259,7 +264,7 @@ export class PlayState extends State {
     this.lastPhysicsUpdate += deltaTime;
     this.lastRenderUpdate += deltaTime;
     spawnTimer += deltaTime;
-    if (model.gameLevel > 5 && !enemySpawnedFlag) {
+    if (model.gameLevel >= 1 && !enemySpawnedFlag) {
       enemySpawnTimer += deltaTime;
     }
 
@@ -292,12 +297,12 @@ export class PlayState extends State {
         this.firelatch = false;
       }
     }
-
+    /* 
     //generate new Asteroid
     if (spawnTimer >= spawnRate) {
       spawnTimer = 0;
       Asteroid.spawn();
-    }
+    } */
 
     //generate new Enemy
     if (enemySpawnTimer >= enemySpawnRate) {

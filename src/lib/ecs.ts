@@ -11,7 +11,7 @@ const MAX_PLAYER_SPEED_MOBILE = 325;
 import plr from "../assets/images/player1.png";
 import asteroid from "../assets/images/asteroid.png";
 import bolt from "../assets/images/playerbullet.png";
-import enemybolt from "../assets/images/red blaster.png";
+import enemybolt from "../assets/images/enemyblaster.png";
 import { HUDparameters, updateHudData, resetGame } from "../states/game";
 
 export class Vector {
@@ -316,6 +316,7 @@ export class Player extends Entity {
         if (this.invincibleTimer > 0) return;
         //we have a collision
         sfx.play("targetHit");
+        bullet.destroy();
         this.health -= 1;
         this.invincibleTimer = 3;
         updateHudData(HUDparameters.HEALTH, -1);
@@ -643,7 +644,7 @@ class Bullet extends Entity {
 }
 
 export class enemyBullet extends Entity {
-  texture: string = bolt;
+  texture: string = enemybolt;
   damage: number = 5;
   ssPosition: string;
   textureSize: string;
@@ -667,6 +668,7 @@ export class enemyBullet extends Entity {
   }
 
   destroy() {
+    console.log("destroying bullet");
     const removeIndex = model.entities.findIndex(ent => {
       return ent.id == this.id;
     });
