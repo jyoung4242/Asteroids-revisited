@@ -358,6 +358,7 @@ export class Enemy extends Entity {
     //get bullets
     const listOfBullets = model.entities.filter(ent => {
       return ent.type == "BULLET";
+      console.log("");
     });
 
     //loop through bullets and check for collisions
