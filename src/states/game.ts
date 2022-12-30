@@ -125,7 +125,7 @@ export class PlayState extends State {
       </div>
 
     </div>
-    <span class="diag">FPS: \${fps}  Enemy State: \${enemystate} Patrol State: \${patrolstate} Attack State: \${attackstate} Evade State: \${evadestate} E speeed: \${espeed}  distance: \${distanceToDest}</span>  
+    <span class="diag">FPS: \${fps}  Enemy State: \${enemystate} Patrol State: \${patrolstate} Attack State: \${attackstate} Evade State: \${evadestate} E speeed: \${espeed}  distance: \${distanceToDest} gap: \${gap} e Angle: \${enemyAngle} t angle: \${targetAngle}</span>  
 
     <div class="\${entity.type}" \${entity<=*entities:id} style="top: \${entity.position.y}px; left: \${entity.position.x}px; width: \${entity.size.x}px; height: \${entity.size.y}px; transform: scale(\${entity.mobileScaling}) ">
       <div class="inner" style="rotate: \${entity.angle}deg; background-image:url(\${entity.texture});background-position: \${entity.ssPosition};background-size:\${entity.textureSize};">

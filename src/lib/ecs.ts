@@ -11,8 +11,8 @@ const MAX_PLAYER_SPEED_MOBILE = 325;
 import plr from "../assets/images/player1.png";
 import asteroid from "../assets/images/asteroid.png";
 import bolt from "../assets/images/playerbullet.png";
-import enemybolt from "../assets/images/enemyblaster.png";
-import { HUDparameters, updateHudData, resetGame } from "../states/game";
+
+import { HUDparameters, updateHudData, resetGame, clearEnemySpawnFlag } from "../states/game";
 
 export class Vector {
   x: number;
@@ -250,6 +250,7 @@ export class Player extends Entity {
         this.invincibleTimer = 3;
         updateHudData(HUDparameters.HEALTH, -1);
         if (this.health <= 0) {
+          clearEnemySpawnFlag();
           //die and reduce lives, and refresh .entities
           sfx.play("astBoom");
           model.entities = [model.entities[0]];
@@ -306,14 +307,13 @@ export class Player extends Entity {
     //check for asteroid collisions
     //get asteroids
     const listOfenemyBullets = model.entities.filter(ent => {
-      return ent.type == "ENEMYBULLET";
+      return ent.type == "BADBULLET";
     });
 
     listOfenemyBullets.forEach(bullet => {
       const distance = this.centerpoint.getDistance(bullet.centerpoint);
 
       if (distance < this.radius * 0.95 + bullet.radius * 0.95) {
-        if (this.invincibleTimer > 0) return;
         //we have a collision
         sfx.play("targetHit");
         bullet.destroy();
@@ -323,6 +323,7 @@ export class Player extends Entity {
         if (this.health <= 0) {
           //die and reduce lives, and refresh .entities
           sfx.play("astBoom");
+          clearEnemySpawnFlag();
           model.entities = [model.entities[0]];
           let tempSize;
           engine.stopEngine();
@@ -623,52 +624,6 @@ class Bullet extends Entity {
   }
 
   destroy() {
-    const removeIndex = model.entities.findIndex(ent => {
-      return ent.id == this.id;
-    });
-    model.entities.splice(removeIndex, 1);
-  }
-
-  update(deltaTime) {
-    this.position.x += this.velocity.x;
-    this.position.y += this.velocity.y;
-    this.centerpoint.x = this.position.x + this.size.x / 2;
-    this.centerpoint.y = this.position.y + this.size.y / 2;
-
-    //check for screen collision
-    if (this.position.x > model.screenwidth) this.destroy();
-    if (this.position.x < -11) this.destroy();
-    if (this.position.y < -11) this.destroy();
-    if (this.position.y > model.screenheight) this.destroy();
-  }
-}
-
-export class enemyBullet extends Entity {
-  texture: string = enemybolt;
-  damage: number = 5;
-  ssPosition: string;
-  textureSize: string;
-  radius: number;
-  centerpoint = new Vector(0, 0);
-  halfsize = new Vector(0, 0);
-
-  constructor(location: Vector, angle: number, shipsize: Vector) {
-    super("enemybullet");
-    this.type = "ENEMYBULLET";
-
-    this.size.x = shipsize.x / 3;
-    this.size.y = shipsize.y / 2;
-    this.radius = this.size.x / 2;
-    this.angle = angle;
-    this.ssPosition = "0px 0px";
-    this.textureSize = "contain";
-    this.position = location;
-    this.position.y -= this.size.y / 2;
-    this.velocity.setPolar(6.5, this.angle);
-  }
-
-  destroy() {
-    console.log("destroying bullet");
     const removeIndex = model.entities.findIndex(ent => {
       return ent.id == this.id;
     });

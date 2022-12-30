@@ -1,6 +1,7 @@
-import { Entity, Vector, enemyBullet } from "./ecs";
+import { Entity, Vector } from "./ecs";
 import { model, sfx } from "..";
-import enemyImage from "../assets/images/enemy.png";
+import enemyImage from "../assets/images/enemyship.png";
+import enemybolt from "../assets/images/enemyblaster.png";
 import { pathsToModuleNameMapper } from "ts-jest";
 import { HUDparameters, updateHudData, resetGame, clearEnemySpawnFlag } from "../states/game";
 
@@ -21,6 +22,9 @@ let evasionAngle: number | null = null;
 let attackAngle: number | null = null;
 let newHeading: Vector | null = null;
 let newAngle: number | null = null;
+
+let ammoTimerBurnoff: number = 6;
+let ammoTimerBurnoffTik: number = 0;
 
 const MAX_PLAYER_SPEED = 80;
 const MAX_PLAYER_SPEED_MOBILE = 80;
@@ -43,6 +47,7 @@ enum evasionStates {
 
 enum attackStates {
   IDLE,
+  STOPPNG,
   TRACKING,
   TURNING,
   FIRING,
@@ -154,13 +159,81 @@ export class Enemy extends Entity {
     return a * (Math.PI / 180);
   };
 
+  scanField = (): boolean => {
+    /*************************************************** */
+    // BULLET DETECTION
+    /*************************************************** */
+
+    const bullets = model.entities.filter(e => {
+      e.type == "BULLET";
+    });
+    if (bullets.length) {
+      //loop through bullets and check for imminent collision
+
+      for (let b = 0; b < bullets.length; b++) {
+        const bullet = bullets[b];
+        const rX = this.screenw - bullet.position.x;
+        const rY = Math.tan(this.ang2Rad(bullet.angle)) * rX;
+        if (this.collisionCheck(bullet.position.x, bullet.position.y, rX, rY)) {
+          //collision detected, take evasive manuevers and bail out of loops
+          bulletToEvade = bullet;
+          this.evastionState = evasionStates.ALERT;
+          bulletCollisionDetected = true;
+          return true;
+        }
+      }
+    }
+
+    /*************************************************** */
+    // ASTEROID DETECTION
+    /*************************************************** */
+
+    const asteroids = model.entities.filter(e => {
+      e.type == "ASTEROID";
+    });
+    if (asteroids.length) {
+      //loop through bullets and check for imminent collision
+
+      for (let a = 0; a < asteroids.length; a++) {
+        const asteroid = asteroids[a];
+        const rX = this.screenw - asteroid.position.x;
+        const rY = Math.tan(this.ang2Rad(asteroid.angle)) * rX;
+        if (this.collisionCheck(asteroid.position.x, asteroid.position.y, rX, rY)) {
+          //collision detected, take evasive manuevers and bail out of loops
+          asteroidToEvade = asteroid;
+          this.evastionState = evasionStates.ALERT;
+          asteroidCollisionDetected = true;
+          return true;
+        }
+      }
+    }
+
+    /*************************************************** */
+    // PLAYER DETECTION
+    /*************************************************** */
+    const detectionVector: Vector = new Vector(this.screenw / 4, this.screenh / 4);
+    const detectionMagnitude = detectionVector.getMag();
+    const playerDistance = model.entities[0].position.getDistance(this.position);
+    console.log("scanning for player: ", playerDistance, detectionMagnitude);
+    if (playerDistance < detectionMagnitude) {
+      //player is close enough to detect
+      playerDetected = true;
+      this.enemyState = enemyAIStates.ENGAGING_PLAYER;
+      this.evastionState = evasionStates.IDLE;
+      this.attackState = attackStates.STOPPNG;
+      return true;
+    }
+
+    return false;
+  };
+
   update(updatetime) {
     /*diagnostic, set enemy state string */
     model.enemystate = this.enemyState.toString();
     model.patrolstate = this.patrolState.toString();
     model.attackstate = this.attackState.toString();
     model.evadestate = this.evastionState.toString();
-    model.espeed = this.velocity.getMag().toString();
+    model.espeed = this.velocity.getMag().toFixed(2).toString();
 
     //****************************************** */
     //burn off invincibility
@@ -176,10 +249,9 @@ export class Enemy extends Entity {
       this.ammoCounter += updatetime;
 
       if (this.ammoCounter >= 1.5) {
+        console.log("regenerating ammo");
         this.ammo += 1;
         this.ammoCounter = 0;
-        const displayedAmmo = ((this.ammo / 25) * 100).toFixed(1);
-        model.ammo = `${displayedAmmo}%`;
       }
     }
 
@@ -299,7 +371,7 @@ export class Enemy extends Entity {
         this.stateTik = 0;
         sfx.play("targetHit");
         bullet.destroy();
-        this.health -= bullet.damage;
+        this.health -= 1;
         if (this.health <= 0) {
           sfx.play("astBoom");
           model.entities[0].exp += this.reward;
@@ -344,6 +416,7 @@ export class Enemy extends Entity {
       //is bullet incoming
       //is asteroid incoming
       //is player nearby
+
       case enemyAIStates.SCANNING:
         this.stateTik += 1;
 
@@ -371,68 +444,7 @@ export class Enemy extends Entity {
         }
 
         //If you've gotten this far, no collision detected yet
-
-        /*************************************************** */
-        // BULLET DETECTION
-        /*************************************************** */
-
-        const bullets = model.entities.filter(e => {
-          e.type == "BULLET";
-        });
-        if (bullets.length) {
-          //loop through bullets and check for imminent collision
-
-          for (let b = 0; b < bullets.length; b++) {
-            const bullet = bullets[b];
-            const rX = this.screenw - bullet.position.x;
-            const rY = Math.tan(this.ang2Rad(bullet.angle)) * rX;
-            if (this.collisionCheck(bullet.position.x, bullet.position.y, rX, rY)) {
-              //collision detected, take evasive manuevers and bail out of loops
-              bulletToEvade = bullet;
-              this.evastionState = evasionStates.ALERT;
-              bulletCollisionDetected = true;
-              break;
-            }
-          }
-        }
-
-        /*************************************************** */
-        // ASTEROID DETECTION
-        /*************************************************** */
-
-        const asteroids = model.entities.filter(e => {
-          e.type == "ASTEROID";
-        });
-        if (asteroids.length) {
-          //loop through bullets and check for imminent collision
-
-          for (let a = 0; a < asteroids.length; a++) {
-            const asteroid = asteroids[a];
-            const rX = this.screenw - asteroid.position.x;
-            const rY = Math.tan(this.ang2Rad(asteroid.angle)) * rX;
-            if (this.collisionCheck(asteroid.position.x, asteroid.position.y, rX, rY)) {
-              //collision detected, take evasive manuevers and bail out of loops
-              asteroidToEvade = asteroid;
-              this.evastionState = evasionStates.ALERT;
-              asteroidCollisionDetected = true;
-              break;
-            }
-          }
-        }
-
-        /*************************************************** */
-        // PLAYER DETECTION
-        /*************************************************** */
-        const detectionVector: Vector = new Vector(this.screenw / 4, this.screenh / 4);
-        const detectionMagnitude = detectionVector.getMag();
-        const playerDistance = model.entities[0].position.getDistance(this.position);
-        if (playerDistance < detectionMagnitude) {
-          //player is close enough to detect
-          playerDetected = true;
-          this.evastionState = evasionStates.IDLE;
-          this.attackState = attackStates.TRACKING;
-          break;
-        }
+        this.scanField();
 
         break;
       case enemyAIStates.EVADING_BULLETS:
@@ -537,6 +549,27 @@ export class Enemy extends Entity {
         switch (this.attackState) {
           case attackStates.IDLE:
             break;
+          case attackStates.STOPPNG:
+            this.patrolState = patrollingStates.IDLE;
+            console.log("slowing down");
+            if (this.velocity.getMag() > 5) {
+              this.travelAngle = this.angle;
+              console.log("reversing");
+              console.log("speed", this.velocity.getMag());
+              console.log("velocity vector", this.velocity.x, this.velocity.y);
+              this.thrust = false;
+              this.reversethrust = true;
+            } else if (this.velocity.getMag() < 5) {
+              console.log("no thrust");
+              console.log("speed", this.velocity.getMag());
+              console.log("velocity vector", this.velocity.x, this.velocity.y);
+              this.velocity.setCoord(0, 0);
+              this.travelAngle = this.angle;
+              this.thrust = false;
+              this.reversethrust = false;
+              this.attackState = attackStates.TRACKING;
+            }
+            break;
           case attackStates.TRACKING:
             vAttack = this.position.subtract(model.entities[0].position);
             console.log("TRACKNIG");
@@ -551,6 +584,7 @@ export class Enemy extends Entity {
             this.attackState = attackStates.TURNING;
             break;
           case attackStates.TURNING:
+            console.log("TURNING");
             console.log("in turning: new angle/this.angle: ", attackAngle, this.angle);
             if (this.angle != attackAngle) {
               const gap = (attackAngle - this.angle) % 360;
@@ -570,18 +604,28 @@ export class Enemy extends Entity {
             break;
 
           case attackStates.FIRING:
+            if (ammoTimerBurnoffTik < ammoTimerBurnoff) {
+              ammoTimerBurnoffTik += 1;
+              break;
+            } else {
+              ammoTimerBurnoffTik = 0;
+            }
             if (this.ammo > 0) {
               sfx.play("playerfire");
               console.log("FIRING: ", this.angle);
-              model.entities.push(new enemyBullet(this.position, this.angle, this.size));
+              model.entities.push(new enemyBullet(new Vector(this.position.x, this.position.y), this.angle, this.size));
               this.ammo -= 1;
-              const displayedAmmo = ((this.ammo / 25) * 100).toFixed(1);
-              model.ammo = `${displayedAmmo}%`;
-              this.attackState = attackStates.MOVING;
+              console.log("bullets remaining: ", this.ammo);
+              this.attackState = attackStates.TRACKING;
+              this.enemyState = enemyAIStates.SCANNING;
+            } else {
+              this.attackState = attackStates.TRACKING;
+              this.enemyState = enemyAIStates.SCANNING;
             }
             break;
           case attackStates.MOVING:
             this.stateTik += 1;
+            console.log("ATTACK NOVE");
             this.thrust = true;
             this.travelAngle = this.angle;
             if (this.stateTik >= 5) {
@@ -652,9 +696,13 @@ export class Enemy extends Entity {
             console.log("in turning: new angle/this.angle: ", newAngle, this.angle);
             if (this.angle != newAngle) {
               const gap = (newAngle - this.angle) % 360;
-              console.log("gap", gap, newAngle, this.angle);
-              if (gap <= 3 && gap >= -3) {
+              model.gap = gap.toFixed(1).toString();
+              model.enemyAngle = this.angle.toFixed(1).toString();
+              model.targetAngle = newAngle.toFixed(1).toString();
+
+              if (gap <= 2.6 && gap >= -2.6) {
                 this.patrolState = patrollingStates.MOVING;
+                this.stateTik = 0;
                 break;
               }
               if (gap <= 0) {
@@ -664,17 +712,13 @@ export class Enemy extends Entity {
                 this.angle -= 2.5;
                 break;
               }
-            } else this.patrolState = patrollingStates.MOVING;
+            } else {
+              this.stateTik = 0;
+              this.patrolState = patrollingStates.MOVING;
+            }
+
             break;
           case patrollingStates.MOVING:
-            if (patrolDestination.getDistance(this.position) < 100) {
-              if (this.velocity.getMag() > 5) {
-                //slow down
-                this.reversethrust = true;
-                this.thrust = false;
-                break;
-              }
-            }
             console.log("MOVING");
             this.thrust = true;
             this.travelAngle = this.angle;
@@ -685,16 +729,25 @@ export class Enemy extends Entity {
 
             break;
           case patrollingStates.NAVIGATING:
+            this.stateTik += 1;
+
+            if (this.stateTik >= 3) {
+              console.log("scanning");
+              this.scanField();
+              this.stateTik = 0;
+              break;
+            }
+
             console.log("navigating");
             this.thrust = false;
             this.travelAngle = this.angle;
             //get distance to quadrant
             const distance = this.position.getDistance(patrolDestination);
             console.log("distance remaining ", distance);
-            model.distanceToDest = distance.toString();
+            model.distanceToDest = distance.toFixed(2).toString();
             console.log("speed", this.velocity.getMag());
             console.log("velocity vector", this.velocity.x, this.velocity.y);
-            if (distance < 50) this.patrolState = patrollingStates.STOPPING;
+            if (distance < 80) this.patrolState = patrollingStates.STOPPING;
             break;
           case patrollingStates.STOPPING:
             console.log("slowing down");
@@ -709,7 +762,7 @@ export class Enemy extends Entity {
               console.log("no thrust");
               console.log("speed", this.velocity.getMag());
               console.log("velocity vector", this.velocity.x, this.velocity.y);
-              this.velocity.setPolar(0, 0);
+              this.velocity.setCoord(0, 0);
               this.travelAngle = this.angle;
               this.thrust = false;
               this.reversethrust = false;
@@ -722,5 +775,65 @@ export class Enemy extends Entity {
       default:
         break;
     }
+  }
+}
+
+export class enemyBullet extends Entity {
+  texture: string = enemybolt;
+  damage: number = 5;
+  ssPosition: string;
+  textureSize: string;
+  radius: number;
+  centerpoint = new Vector(0, 0);
+  halfsize = new Vector(0, 0);
+
+  constructor(location: Vector, angle: number, shipsize: Vector) {
+    super("badbullet");
+    this.type = "BADBULLET";
+
+    this.size.x = shipsize.x / 4;
+    this.size.y = shipsize.y / 3;
+    this.radius = this.size.x / 2;
+    this.angle = angle;
+    this.ssPosition = "0px 0px";
+    this.textureSize = "contain";
+    this.position = location;
+    this.position.x += shipsize.x / 2;
+    const anglex = (shipsize.x / 2) * Math.cos(this.ang2Rad(this.angle));
+    this.position.x += anglex;
+    const angley = (shipsize.y / 2) * Math.sin(this.ang2Rad(-this.angle));
+    this.position.y += shipsize.y / 2;
+    this.position.y += angley;
+    console.log(
+      `location (${location.x}, ${location.y})  shipsize ${shipsize.x}, ${shipsize.y} angle: ${this.angle} shift angle (${anglex}, ${angley})`
+    );
+    console.log(`bullet position: ${this.position.x}, ${this.position.y}`);
+    this.velocity.setPolar(6.5, this.angle);
+  }
+
+  destroy() {
+    console.log("destroying bullet");
+    const removeIndex = model.entities.findIndex(ent => {
+      return ent.id == this.id;
+    });
+    console.log("entity index: ", removeIndex);
+    model.entities.splice(removeIndex, 1);
+  }
+
+  ang2Rad = (a: number): number => {
+    return a * (Math.PI / 180);
+  };
+
+  update(deltaTime) {
+    this.position.x += this.velocity.x;
+    this.position.y += this.velocity.y;
+    this.centerpoint.x = this.position.x + this.size.x / 2;
+    this.centerpoint.y = this.position.y + this.size.y / 2;
+
+    //check for screen collision
+    if (this.position.x > model.screenwidth) this.destroy();
+    if (this.position.x < -11) this.destroy();
+    if (this.position.y < -11) this.destroy();
+    if (this.position.y > model.screenheight) this.destroy();
   }
 }

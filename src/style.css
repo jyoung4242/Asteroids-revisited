@@ -116,6 +116,18 @@ body {
   backface-visibility: hidden;
 }
 
+.BADBULLET {
+  position: fixed;
+  transform: rotate(-90deg);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  transform-origin: center;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
 .inner {
   width: 100%;
   height: 100%;
@@ -134,19 +146,6 @@ body {
 }
 
 .BULLET {
-  position: fixed;
-  /*  border: 1px silver solid; */
-  transform: rotate(-90deg);
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: flex-start;
-  transform-origin: center;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-}
-
-.ENEMYBULLET {
   position: fixed;
   /*  border: 1px silver solid; */
   transform: rotate(-90deg);

@@ -25,6 +25,9 @@ export enum GameStates {
 }
 
 export let model = {
+  gap: "",
+  enemyAngle: "",
+  targetAngle: "",
   enemystate: "",
   patrolstate: "",
   attackstate: "",
