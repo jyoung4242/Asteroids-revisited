@@ -1,10 +1,10 @@
 import "./style.css";
 import { UI } from "@peasy-lib/peasy-ui";
-import { Physics } from "@peasy-lib/peasy-physics";
+import { Physics, Vector } from "@peasy-lib/peasy-physics";
 import { GameState } from "./states/gameState";
 import { MenuState } from "./states/menu";
 import { PlayState } from "./states/game";
-import { Vector } from "./lib/ecs";
+import { angle2rad } from "./lib/ecs";
 import { BGM, SFX } from "./lib/sound";
 import { BackGround } from "./lib/background";
 
@@ -26,7 +26,7 @@ export enum GameStates {
 
 export let model = {
   mobiletoggle: false,
-
+  canvas: "",
   gap: "",
   enemyAngle: "",
   targetAngle: "",
@@ -51,7 +51,7 @@ export let model = {
   screenwidth: 600,
   screenheight: 400,
   gamestate: GameStates.MENU,
-  entities: [],
+  gameObjects: [],
 
   /*input management*/
   keypresses: {
@@ -124,19 +124,19 @@ export let model = {
     }
   },
   get spawnPoint1() {
-    let cpX = model.entities[0].position.x + model.entities[0].size.x / 2;
-    let cpY = model.entities[0].position.y + model.entities[0].size.y / 2;
-    let radius = model.entities[0].size.x / 4;
-    let sx = radius * Math.cos(Vector.angle2rad(model.entities[0].angle + 10));
-    let sy = radius * Math.sin(Vector.angle2rad(model.entities[0].angle + 10));
+    let cpX = model.gameObjects[0].position.x + model.gameObjects[0].size.x / 2;
+    let cpY = model.gameObjects[0].position.y + model.gameObjects[0].size.y / 2;
+    let radius = model.gameObjects[0].size.x / 4;
+    let sx = radius * Math.cos(angle2rad(model.gameObjects[0].angle + 10));
+    let sy = radius * Math.sin(angle2rad(model.gameObjects[0].angle + 10));
     return new Vector(cpX + sx, cpY + sy);
   },
   get spawnPoint2() {
-    let cpX = model.entities[0].position.x + model.entities[0].size.x / 2;
-    let cpY = model.entities[0].position.y + model.entities[0].size.y / 2;
-    let radius = model.entities[0].size.x / 4;
-    let sx = radius * Math.cos(Vector.angle2rad(model.entities[0].angle - 10));
-    let sy = radius * Math.sin(Vector.angle2rad(model.entities[0].angle - 10));
+    let cpX = model.gameObjects[0].position.x + model.gameObjects[0].size.x / 2;
+    let cpY = model.gameObjects[0].position.y + model.gameObjects[0].size.y / 2;
+    let radius = model.gameObjects[0].size.x / 4;
+    let sx = radius * Math.cos(angle2rad(model.gameObjects[0].angle - 10));
+    let sy = radius * Math.sin(angle2rad(model.gameObjects[0].angle - 10));
     return new Vector(cpX + sx, cpY + sy);
   },
 

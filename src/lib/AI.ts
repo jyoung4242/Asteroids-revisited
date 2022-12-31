@@ -1,9 +1,10 @@
-import { DESKTOP_SCALING, Entity, Vector } from "./ecs";
+import { DESKTOP_SCALING, Entity, GameObject, vectorAngle, vectorDistance, vectorMag, vectorSetPolar } from "./ecs";
 import { model, sfx } from "..";
 import enemyImage from "../assets/images/enemyship.png";
 import enemybolt from "../assets/images/enemyblaster.png";
 import { pathsToModuleNameMapper } from "ts-jest";
-import { HUDparameters, updateHudData, resetGame, clearEnemySpawnFlag } from "../states/game";
+import { HUDparameters, updateHudData, resetGame, clearEnemySpawnFlag, gameObjects } from "../states/game";
+import { Physics, Vector } from "@peasy-lib/peasy-physics";
 
 // Load Chance
 let Chance = require("chance");
@@ -54,7 +55,7 @@ enum patrollingStates {
   STOPPING = "STOPPING",
 }
 
-export class Enemy extends Entity {
+export class Enemy extends GameObject {
   health: number;
   reward: number;
   texture: string = enemyImage;
@@ -73,7 +74,7 @@ export class Enemy extends Entity {
   centerpoint = new Vector(0, 0);
   invincibleTimer: number = 0;
 
-  constructor(w: number, h: number) {
+  constructor(w: number, h: number, engine: Physics) {
     super("Enemy");
     this.type = "ENEMY";
     this.health = 10;
@@ -87,7 +88,7 @@ export class Enemy extends Entity {
 
     if (w <= h) tempSize = w / 13;
     else tempSize = h / 13;
-    this.size.add({ x: tempSize, y: tempSize }, true);
+    this.size.add(new Vector(tempSize, tempSize), true);
     this.radius = this.size.x / 2;
     //find starting spot
     const tempSide = chance.integer({ min: 0, max: 3 });
@@ -114,11 +115,11 @@ export class Enemy extends Entity {
         tempY = h - this.size.y;
         break;
     }
-    this.position.add({ x: tempX, y: tempY }, true);
+    this.position.add(new Vector(tempX, tempY), true);
   }
 
-  static spawn() {
-    model.entities.push(new Enemy(model.screenwidth, model.screenheight));
+  static spawn(Physics: any) {
+    model.gameObjects.push(new Enemy(model.screenwidth, model.screenheight, Physics));
   }
 
   // LINE/LINE collision
@@ -157,8 +158,8 @@ export class Enemy extends Entity {
     // PLAYER DETECTION
     /*************************************************** */
     const detectionVector: Vector = new Vector(this.screenw / 4, this.screenh / 4);
-    const detectionMagnitude = detectionVector.getMag();
-    const playerDistance = model.entities[0].position.getDistance(this.position);
+    const detectionMagnitude = vectorMag(detectionVector); //detectionVector.getMag();
+    const playerDistance = model.gameObjects[0].position.getDistance(this.position);
     console.log("scanning for player: ", playerDistance, detectionMagnitude);
     if (playerDistance < detectionMagnitude) {
       //player is close enough to detect
@@ -180,7 +181,7 @@ export class Enemy extends Entity {
     model.enemystate = this.enemyState;
     model.patrolstate = this.patrolState;
     model.attackstate = this.attackState;
-    model.espeed = this.velocity.getMag().toFixed(2).toString();
+    model.espeed = vectorMag(this.velocity).toFixed(2).toString(); //this.velocity.getMag().toFixed(2).toString();
 
     //****************************************** */
     //burn off invincibility
@@ -257,12 +258,12 @@ export class Enemy extends Entity {
 
     //check for asteroid collisions
     //get asteroids
-    const listOfAsteroids = model.entities.filter(ent => {
+    const listOfAsteroids = model.gameObjects.filter(ent => {
       return ent.type == "ASTEROID";
     });
 
     listOfAsteroids.forEach(ast => {
-      const distance = this.centerpoint.getDistance(ast.centerpoint);
+      const distance = vectorDistance(this.centerpoint, ast.centerpoint); //this.centerpoint.getDistance(ast.centerpoint);
 
       if (distance < this.radius * 0.95 + ast.radius * 0.95) {
         if (this.invincibleTimer > 0) return;
@@ -276,8 +277,8 @@ export class Enemy extends Entity {
         if (this.health <= 0) {
           //die and remove entity
           sfx.play("astBoom");
-          const myIndex = model.entities.findIndex(e => e.id == this.id);
-          model.entities.splice(myIndex, 1);
+          const myIndex = model.gameObjects.findIndex(e => e.id == this.id);
+          model.gameObjects.splice(myIndex, 1);
           clearEnemySpawnFlag();
         }
 
@@ -303,7 +304,7 @@ export class Enemy extends Entity {
     //check for player bullet collisions
     //check for bullet collisions
     //get bullets
-    const listOfBullets = model.entities.filter(ent => {
+    const listOfBullets = model.gameObjects.filter(ent => {
       return ent.type == "BULLET";
       console.log("");
     });
@@ -311,7 +312,7 @@ export class Enemy extends Entity {
     //loop through bullets and check for collisions
     listOfBullets.forEach(bullet => {
       //get distance between bullet cp and asteroid cp
-      const distance = this.centerpoint.getDistance(bullet.centerpoint);
+      const distance = vectorDistance(this.centerpoint, bullet.centerpoint); //this.centerpoint.getDistance(bullet.centerpoint);
 
       if (distance < this.radius * 0.75 + bullet.radius) {
         //we have a collision
@@ -322,12 +323,12 @@ export class Enemy extends Entity {
         this.health -= 1;
         if (this.health <= 0) {
           sfx.play("astBoom");
-          model.entities[0].exp += this.reward;
+          model.gameObjects[0].exp += this.reward;
           updateHudData(HUDparameters.EXPERIENCE, this.reward);
-          const myIndex = model.entities.findIndex(e => e.id == this.id);
-          model.entities.splice(myIndex, 1);
+          const myIndex = model.gameObjects.findIndex(e => e.id == this.id);
+          model.gameObjects.splice(myIndex, 1);
           //give ammo bonus
-          model.entities[0].ammoBonus();
+          model.gameObjects[0].ammoBonus();
           clearEnemySpawnFlag();
         }
       }
@@ -388,8 +389,8 @@ export class Enemy extends Entity {
           case attackStates.STOPPNG:
             console.log("slowing down");
             this.patrolState = patrollingStates.IDLE;
-
-            while (this.velocity.getMag() > 3) {
+            //this.velocity.getMag()
+            while (vectorMag(this.velocity) > 3) {
               if (this.velocity.x < 0) this.velocity.x += 1;
               else this.velocity.x -= 1;
 
@@ -404,12 +405,12 @@ export class Enemy extends Entity {
 
             break;
           case attackStates.TRACKING:
-            vAttack = this.position.subtract(model.entities[0].position);
+            vAttack = this.position.subtract(model.gameObjects[0].position);
             console.log("TRACKNIG");
             console.log("this.position", this.position.x, this.position.y);
-            console.log("player position", model.entities[0].position.x, model.entities[0].position.y);
+            console.log("player position", model.gameObjects[0].position.x, model.gameObjects[0].position.y);
             console.log("attack vector", vAttack.x, vAttack.y);
-            thetaAttack = vAttack.getAngle();
+            thetaAttack = vectorAngle(vAttack); //vAttack.getAngle();
             attackAngle = thetaAttack;
             console.log("new angle: ", thetaAttack);
 
@@ -476,7 +477,8 @@ export class Enemy extends Entity {
             if (this.ammo > 0) {
               sfx.play("enemyfire");
               console.log("FIRING: ", this.angle);
-              model.entities.push(new enemyBullet(new Vector(this.position.x, this.position.y), this.angle, this.size));
+              //TODO - ENTITY CREATION
+              model.gameObjects.push(new enemyBullet(new Vector(this.position.x, this.position.y), this.angle, this.size));
               this.ammo -= 1;
               console.log("bullets remaining: ", this.ammo);
               this.attackState = attackStates.TRACKING;
@@ -541,10 +543,11 @@ export class Enemy extends Entity {
             };
             const targetVector = vectorMap[targetQuadrant];
             patrolDestination = targetVector;
-            const adjustedPosition = this.position.add({ x: this.size.x / 2, y: this.size.y / 2 }, false);
+            const adjustedPosition = this.position.add(new Vector(this.size.x / 2, this.size.y / 2), false);
             newHeading = adjustedPosition.subtract(targetVector);
             console.log("new heading", newHeading.x, newHeading.y);
-            newAngle = newHeading.getAngle();
+            //newAngle = newHeading.getAngle();
+            newAngle = vectorAngle(newHeading);
             console.log("newangle: ", newAngle);
             this.patrolState = patrollingStates.TURNING;
             enemyPatrolling = true;
@@ -615,7 +618,8 @@ export class Enemy extends Entity {
             console.log("MOVING");
             this.thrust = true;
             this.travelAngle = this.angle;
-            if (this.velocity.getMag() >= MAX_PLAYER_SPEED) {
+            //this.velocity.getMag()
+            if (vectorMag(this.velocity) >= MAX_PLAYER_SPEED) {
               this.patrolState = patrollingStates.NAVIGATING;
               this.thrust = false;
               this.stateTik = 0;
@@ -636,17 +640,18 @@ export class Enemy extends Entity {
             this.thrust = false;
             this.travelAngle = this.angle;
             //get distance to quadrant
-            const distance = this.position.getDistance(patrolDestination);
+            const distance = vectorDistance(this.position, patrolDestination); //this.position.getDistance(patrolDestination);
+
             console.log("distance remaining ", distance);
             model.distanceToDest = distance.toFixed(2).toString();
-            console.log("speed", this.velocity.getMag());
+            console.log("speed", vectorMag(this.velocity).toFixed(2)); // this.velocity.getMag()
             console.log("velocity vector", this.velocity.x, this.velocity.y);
             if (distance < 80) this.patrolState = patrollingStates.STOPPING;
             break;
           case patrollingStates.STOPPING:
             console.log("slowing down");
-
-            while (this.velocity.getMag() > 3) {
+            //this.velocity.getMag()
+            while (vectorMag(this.velocity) > 3) {
               if (this.velocity.x < 0) this.velocity.x += 1;
               else this.velocity.x -= 1;
 
@@ -658,24 +663,7 @@ export class Enemy extends Entity {
             this.velocity.x = 0;
             this.velocity.y = 0;
             this.patrolState = patrollingStates.IDLE;
-            /* 
-            if (this.velocity.getMag() > 5) {
-              this.travelAngle = this.angle;
-              console.log("reversing");
-              console.log("speed", this.velocity.getMag());
-              console.log("velocity vector", this.velocity.x, this.velocity.y);
-              this.thrust = false;
-              this.reversethrust = true;
-            } else if (this.velocity.getMag() < 5) {
-              console.log("no thrust");
-              console.log("speed", this.velocity.getMag());
-              console.log("velocity vector", this.velocity.x, this.velocity.y);
-              this.velocity.setCoord(0, 0);
-              this.travelAngle = this.angle;
-              this.thrust = false;
-              this.reversethrust = false;
-              this.patrolState = patrollingStates.IDLE;
-            } */
+
             break;
         }
 
@@ -686,7 +674,7 @@ export class Enemy extends Entity {
   }
 }
 
-export class enemyBullet extends Entity {
+export class enemyBullet extends GameObject {
   texture: string = enemybolt;
   damage: number = 5;
   ssPosition: string;
@@ -718,16 +706,17 @@ export class enemyBullet extends Entity {
       `location (${location.x}, ${location.y})  shipsize ${shipsize.x}, ${shipsize.y} angle: ${this.angle} shift angle (${anglex}, ${angley})`
     );
     console.log(`bullet position: ${this.position.x}, ${this.position.y}`);
-    this.velocity.setPolar(6.5, this.angle);
+    //this.velocity.setPolar(6.5, this.angle);
+    vectorSetPolar(this.velocity, 9, this.angle);
   }
 
   destroy() {
     console.log("destroying bullet");
-    const removeIndex = model.entities.findIndex(ent => {
+    const removeIndex = model.gameObjects.findIndex(ent => {
       return ent.id == this.id;
     });
     console.log("entity index: ", removeIndex);
-    model.entities.splice(removeIndex, 1);
+    model.gameObjects.splice(removeIndex, 1);
   }
 
   ang2Rad = (a: number): number => {

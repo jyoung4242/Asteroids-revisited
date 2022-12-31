@@ -1,15 +1,3 @@
-//TODO player object
-//TODO asteroid spawing
-//TODO spritesheets
-//TODO sounds
-//TODO game states
-//TODO HUD
-//TODO Physics
-//TODO collisions
-//TODO ECS
-//TODO lighting
-//TODO timer mechanic? - timed mode and survival mode?
-
 //entities
 //  player
 //  bullets
