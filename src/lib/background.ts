@@ -29,11 +29,12 @@ type galaxy = {
 };
 
 export class BackGround {
-  rng = alea("B");
+  chance = new Chance();
+  rng = alea(this.chance.string({ length: 5 }));
   cnv: HTMLCanvasElement | undefined = undefined;
   galaxyImage = new Image();
   ctx: CanvasRenderingContext2D | undefined = undefined;
-  chance = new Chance();
+
   tempnoise = createNoise2D(this.rng);
   noise2d = this.fbm2d(this.tempnoise, 2);
   colorScale = chroma.scale(["black", "1b082d"]);
