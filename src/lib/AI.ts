@@ -30,37 +30,28 @@ const MAX_PLAYER_SPEED = 80;
 const MAX_PLAYER_SPEED_MOBILE = 80;
 
 enum enemyAIStates {
-  IDLE,
-  SCANNING,
-  EVADING_BULLETS,
-  EVADING_ASTEROIDS,
-  ENGAGING_PLAYER,
-  PATROLLING,
-}
-
-enum evasionStates {
-  IDLE,
-  ALERT,
-  TURNING,
-  MOVING,
+  IDLE = "IDLE",
+  SCANNING = "SCANNING",
+  ENGAGING_PLAYER = "ATTACK",
+  PATROLLING = "PATROL",
 }
 
 enum attackStates {
-  IDLE,
-  STOPPNG,
-  TRACKING,
-  TURNING,
-  FIRING,
-  MOVING,
+  IDLE = "IDLE",
+  STOPPNG = "STOPPING",
+  TRACKING = "TRACKING",
+  TURNING = "TURNING",
+  FIRING = "FIRING",
+  MOVING = "MOVING",
 }
 
 enum patrollingStates {
-  IDLE,
-  WAYPOINT,
-  TURNING,
-  MOVING,
-  NAVIGATING,
-  STOPPING,
+  IDLE = "IDLE",
+  WAYPOINT = "WAYPOINT",
+  TURNING = "TURNING",
+  MOVING = "MOVING",
+  NAVIGATING = "NAVIGATING",
+  STOPPING = "STOPPING",
 }
 
 export class Enemy extends Entity {
@@ -68,7 +59,6 @@ export class Enemy extends Entity {
   reward: number;
   texture: string = enemyImage;
   enemyState: enemyAIStates = enemyAIStates.IDLE;
-  evastionState: evasionStates = evasionStates.IDLE;
   attackState: attackStates = attackStates.IDLE;
   patrolState: patrollingStates = patrollingStates.IDLE;
   mass: number = 5;
@@ -161,54 +151,6 @@ export class Enemy extends Entity {
 
   scanField = (): boolean => {
     /*************************************************** */
-    // BULLET DETECTION
-    /*************************************************** */
-
-    const bullets = model.entities.filter(e => {
-      e.type == "BULLET";
-    });
-    if (bullets.length) {
-      //loop through bullets and check for imminent collision
-
-      for (let b = 0; b < bullets.length; b++) {
-        const bullet = bullets[b];
-        const rX = this.screenw - bullet.position.x;
-        const rY = Math.tan(this.ang2Rad(bullet.angle)) * rX;
-        if (this.collisionCheck(bullet.position.x, bullet.position.y, rX, rY)) {
-          //collision detected, take evasive manuevers and bail out of loops
-          bulletToEvade = bullet;
-          this.evastionState = evasionStates.ALERT;
-          bulletCollisionDetected = true;
-          return true;
-        }
-      }
-    }
-
-    /*************************************************** */
-    // ASTEROID DETECTION
-    /*************************************************** */
-
-    const asteroids = model.entities.filter(e => {
-      e.type == "ASTEROID";
-    });
-    if (asteroids.length) {
-      //loop through bullets and check for imminent collision
-
-      for (let a = 0; a < asteroids.length; a++) {
-        const asteroid = asteroids[a];
-        const rX = this.screenw - asteroid.position.x;
-        const rY = Math.tan(this.ang2Rad(asteroid.angle)) * rX;
-        if (this.collisionCheck(asteroid.position.x, asteroid.position.y, rX, rY)) {
-          //collision detected, take evasive manuevers and bail out of loops
-          asteroidToEvade = asteroid;
-          this.evastionState = evasionStates.ALERT;
-          asteroidCollisionDetected = true;
-          return true;
-        }
-      }
-    }
-
-    /*************************************************** */
     // PLAYER DETECTION
     /*************************************************** */
     const detectionVector: Vector = new Vector(this.screenw / 4, this.screenh / 4);
@@ -219,7 +161,6 @@ export class Enemy extends Entity {
       //player is close enough to detect
       playerDetected = true;
       this.enemyState = enemyAIStates.ENGAGING_PLAYER;
-      this.evastionState = evasionStates.IDLE;
       this.attackState = attackStates.STOPPNG;
       return true;
     }
@@ -227,12 +168,15 @@ export class Enemy extends Entity {
     return false;
   };
 
-  update(updatetime) {
+  sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  async update(updatetime) {
     /*diagnostic, set enemy state string */
-    model.enemystate = this.enemyState.toString();
-    model.patrolstate = this.patrolState.toString();
-    model.attackstate = this.attackState.toString();
-    model.evadestate = this.evastionState.toString();
+    model.enemystate = this.enemyState;
+    model.patrolstate = this.patrolState;
+    model.attackstate = this.attackState;
     model.espeed = this.velocity.getMag().toFixed(2).toString();
 
     //****************************************** */
@@ -320,7 +264,7 @@ export class Enemy extends Entity {
       if (distance < this.radius * 0.95 + ast.radius * 0.95) {
         if (this.invincibleTimer > 0) return;
         //we have a collision
-        this.enemyState = enemyAIStates.SCANNING;
+        this.enemyState = enemyAIStates.IDLE;
         this.stateTik = 0;
         sfx.play("ship2asteroid");
         this.health -= 1;
@@ -368,7 +312,7 @@ export class Enemy extends Entity {
 
       if (distance < this.radius * 0.75 + bullet.radius) {
         //we have a collision
-        this.enemyState = enemyAIStates.SCANNING;
+        this.enemyState = enemyAIStates.IDLE;
         this.stateTik = 0;
         sfx.play("targetHit");
         bullet.destroy();
@@ -403,42 +347,25 @@ export class Enemy extends Entity {
       //then jump into scannning
       case enemyAIStates.IDLE:
         this.stateTik += 1;
-        if (this.stateTik >= 100) {
+        if (this.stateTik >= 10) {
           this.enemyState = enemyAIStates.SCANNING;
-          bulletCollisionDetected = false;
-          asteroidCollisionDetected = false;
           playerDetected = false;
-          bulletToEvade = null;
-          asteroidToEvade = null;
           this.stateTik = 0;
         }
         break;
-      //check all three assessments
-      //is bullet incoming
-      //is asteroid incoming
-      //is player nearby
-
       case enemyAIStates.SCANNING:
         this.stateTik += 1;
 
         //check collision flags
         //if set, AND scanning timer complete, change state
-        if (this.stateTik >= 10 && (bulletCollisionDetected || asteroidCollisionDetected || playerDetected)) {
-          if (bulletCollisionDetected) this.enemyState = enemyAIStates.EVADING_BULLETS;
-          else if (asteroidCollisionDetected) this.enemyState = enemyAIStates.EVADING_ASTEROIDS;
-          else if (playerDetected) this.enemyState = enemyAIStates.ENGAGING_PLAYER;
-          bulletCollisionDetected = false;
-          asteroidCollisionDetected = false;
+        if (this.stateTik >= 10 && playerDetected) {
+          if (playerDetected) this.enemyState = enemyAIStates.ENGAGING_PLAYER;
           playerDetected = false;
           this.stateTik = 0;
           break;
-        } else if (this.stateTik >= 10 && !asteroidCollisionDetected && !bulletCollisionDetected && !playerDetected) {
+        } else if (this.stateTik >= 10 && !playerDetected) {
           //no collisions, and scanning burnoff finished
           this.enemyState = enemyAIStates.PATROLLING;
-          bulletToEvade = null;
-          asteroidToEvade = null;
-          bulletCollisionDetected = false;
-          asteroidCollisionDetected = false;
           playerDetected = false;
           this.stateTik = 0;
           break;
@@ -448,119 +375,42 @@ export class Enemy extends Entity {
         this.scanField();
 
         break;
-      case enemyAIStates.EVADING_BULLETS:
-        //find vector between bullet to evade and enemy
-        //turn 90 deg from bullet
-        //move out of path... just increase velocity in new direction
-        //afterwards, set back to scanning
-        switch (this.evastionState) {
-          case evasionStates.IDLE:
-            break;
-          case evasionStates.ALERT:
-            vAttack = this.position.subtract(bulletToEvade.position);
-            thetaAttack = vAttack.getAngle();
-            evasionAngle = thetaAttack + 90;
-            this.evastionState = evasionStates.TURNING;
-            break;
-          case evasionStates.TURNING:
-            if (this.angle != evasionAngle) {
-              const gap = evasionAngle - this.angle;
-              if (gap == 0) {
-                this.evastionState = evasionStates.MOVING;
-                break;
-              }
-              if (gap <= 0) {
-                this.angle += 1;
-                break;
-              } else {
-                this.angle -= 1;
-                break;
-              }
-            } else this.evastionState = evasionStates.MOVING;
-            break;
-          case evasionStates.MOVING:
-            this.stateTik += 1;
-            this.thrust = true;
-            this.travelAngle = this.angle;
-            if (this.stateTik >= 10) {
-              this.stateTik = 0;
-              this.thrust = false;
-              this.evastionState = evasionStates.IDLE;
-              this.enemyState = enemyAIStates.IDLE;
-              vAttack = null;
-              thetaAttack = null;
-              evasionAngle = null;
-            }
-            break;
-          default:
-            break;
-        }
-
-        break;
-      case enemyAIStates.EVADING_ASTEROIDS:
-        //find vector between bullet to evade and enemy
-        //turn 90 deg from bullet
-        //move out of path... just increase velocity in new direction
-        //afterwards, set back to scanning
-        switch (this.evastionState) {
-          case evasionStates.IDLE:
-            break;
-          case evasionStates.ALERT:
-            vAttack = this.position.subtract(asteroidToEvade.position);
-            thetaAttack = vAttack.getAngle();
-            evasionAngle = thetaAttack + 90;
-            this.evastionState = evasionStates.TURNING;
-            break;
-          case evasionStates.TURNING:
-            if (this.angle != evasionAngle) {
-              const gap = evasionAngle - this.angle;
-              if (gap == 0) {
-                this.evastionState = evasionStates.MOVING;
-                break;
-              }
-              if (gap <= 0) {
-                this.angle += 1;
-                break;
-              } else {
-                this.angle -= 1;
-                break;
-              }
-            } else this.evastionState = evasionStates.MOVING;
-            break;
-          case evasionStates.MOVING:
-            this.stateTik += 1;
-            this.thrust = true;
-            this.travelAngle = this.angle;
-            if (this.stateTik >= 15) {
-              this.stateTik = 0;
-              this.thrust = false;
-              this.evastionState = evasionStates.IDLE;
-              this.enemyState = enemyAIStates.IDLE;
-              vAttack = null;
-              thetaAttack = null;
-              evasionAngle = null;
-            }
-            break;
-          default:
-            break;
-        }
-        break;
       case enemyAIStates.ENGAGING_PLAYER:
         //turn to player, fire, and move closer
         switch (this.attackState) {
           case attackStates.IDLE:
+            this.attackState = attackStates.STOPPNG;
+            this.patrolState = patrollingStates.IDLE;
             break;
           case attackStates.STOPPNG:
-            this.patrolState = patrollingStates.IDLE;
             console.log("slowing down");
-            if (this.velocity.getMag() > 5) {
-              this.travelAngle = this.angle;
+            this.patrolState = patrollingStates.IDLE;
+
+            while (this.velocity.getMag() > 3) {
+              if (this.velocity.x < 0) this.velocity.x += 1;
+              else this.velocity.x -= 1;
+
+              if (this.velocity.y < 0) this.velocity.y += 1;
+              else this.velocity.y -= 1;
+
+              await this.sleep(50);
+            }
+            this.velocity.x = 0;
+            this.velocity.y = 0;
+            this.attackState = attackStates.TRACKING;
+
+            /*             this.patrolState = patrollingStates.IDLE;
+            console.log("slowing down");
+            if (this.velocity.getMag() > 10) {
+              this.travelAngle = this.velocity.getAngle();
+              //get current velocity angle
+
               console.log("reversing");
               console.log("speed", this.velocity.getMag());
               console.log("velocity vector", this.velocity.x, this.velocity.y);
               this.thrust = false;
               this.reversethrust = true;
-            } else if (this.velocity.getMag() < 5) {
+            } else if (this.velocity.getMag() < 10) {
               console.log("no thrust");
               console.log("speed", this.velocity.getMag());
               console.log("velocity vector", this.velocity.x, this.velocity.y);
@@ -569,7 +419,7 @@ export class Enemy extends Entity {
               this.thrust = false;
               this.reversethrust = false;
               this.attackState = attackStates.TRACKING;
-            }
+            } */
             break;
           case attackStates.TRACKING:
             vAttack = this.position.subtract(model.entities[0].position);
@@ -586,22 +436,52 @@ export class Enemy extends Entity {
             break;
           case attackStates.TURNING:
             console.log("TURNING");
-            console.log("in turning: new angle/this.angle: ", attackAngle, this.angle);
+
             if (this.angle != attackAngle) {
-              const gap = (attackAngle - this.angle) % 360;
-              console.log("gap", gap, attackAngle, this.angle);
-              if (gap <= 5 && gap >= -5) {
+              //sanitize this.angle
+              if (this.angle < 0 || this.angle >= 360) {
+                while (this.angle < 0) this.angle += 360;
+                while (this.angle >= 360) this.angle -= 360;
+              }
+              //sanitize attackAngle
+              if (attackAngle < 0 || attackAngle >= 360) {
+                while (attackAngle < 0) attackAngle += 360;
+                while (attackAngle >= 360) attackAngle -= 360;
+              }
+              console.log("in turning: new angle/this.angle: ", attackAngle, this.angle);
+              const alpha = attackAngle - this.angle;
+              const beta = attackAngle - this.angle + 360;
+              const gamma = attackAngle - this.angle - 360;
+
+              let trackingIndex: number | null = 0;
+              const reducerArray = [alpha, beta, gamma];
+
+              reducerArray.reduce((accum, current, index) => {
+                if (Math.abs(accum) < Math.abs(current)) return accum;
+                trackingIndex = index;
+                return current;
+              });
+
+              let turndir = "CW";
+
+              if (reducerArray[trackingIndex] < 0) turndir = "CCW";
+
+              if (alpha <= 2.6 && alpha >= -2.6) {
                 this.attackState = attackStates.FIRING;
+                this.stateTik = 0;
                 break;
               }
-              if (gap <= 0) {
-                this.angle -= 2.5;
-                break;
-              } else {
+              if (turndir == "CW") {
                 this.angle += 2.5;
                 break;
+              } else {
+                this.angle -= 2.5;
+                break;
               }
-            } else this.attackState = attackStates.FIRING;
+            } else {
+              this.stateTik = 0;
+              this.attackState = attackStates.FIRING;
+            }
             break;
 
           case attackStates.FIRING:
@@ -612,7 +492,7 @@ export class Enemy extends Entity {
               ammoTimerBurnoffTik = 0;
             }
             if (this.ammo > 0) {
-              sfx.play("playerfire");
+              sfx.play("enemyfire");
               console.log("FIRING: ", this.angle);
               model.entities.push(new enemyBullet(new Vector(this.position.x, this.position.y), this.angle, this.size));
               this.ammo -= 1;
@@ -645,7 +525,7 @@ export class Enemy extends Entity {
         switch (this.patrolState) {
           case patrollingStates.IDLE:
             this.stateTik += 1;
-            if (this.stateTik >= 5) {
+            if (this.stateTik >= 2) {
               this.stateTik = 0;
               this.patrolState = patrollingStates.WAYPOINT;
             }
@@ -681,9 +561,7 @@ export class Enemy extends Entity {
             patrolDestination = targetVector;
             const adjustedPosition = this.position.add({ x: this.size.x / 2, y: this.size.y / 2 }, false);
             newHeading = adjustedPosition.subtract(targetVector);
-            // newHeading.x = -newHeading.x;
             console.log("new heading", newHeading.x, newHeading.y);
-            //newHeading = targetVector.subtract(this.position);
             newAngle = newHeading.getAngle();
             console.log("newangle: ", newAngle);
             this.patrolState = patrollingStates.TURNING;
@@ -694,19 +572,46 @@ export class Enemy extends Entity {
             break;
 
           case patrollingStates.TURNING:
-            console.log("in turning: new angle/this.angle: ", newAngle, this.angle);
             if (this.angle != newAngle) {
-              const gap = (newAngle - this.angle) % 360;
-              model.gap = gap.toFixed(1).toString();
+              //sanitize this.angle
+              if (this.angle < 0 || this.angle >= 360) {
+                while (this.angle < 0) this.angle += 360;
+                while (this.angle >= 360) this.angle -= 360;
+              }
+              //sanitize newAngle
+              if (newAngle < 0 || newAngle >= 360) {
+                while (newAngle < 0) newAngle += 360;
+                while (newAngle >= 360) newAngle -= 360;
+              }
+              console.log("in turning: new angle/this.angle: ", newAngle, this.angle);
+              const alpha = newAngle - this.angle;
+              const beta = newAngle - this.angle + 360;
+              const gamma = newAngle - this.angle - 360;
+
+              let trackingIndex: number | null = 0;
+              const reducerArray = [alpha, beta, gamma];
+
+              reducerArray.reduce((accum, current, index) => {
+                if (Math.abs(accum) < Math.abs(current)) return accum;
+                trackingIndex = index;
+                return current;
+              });
+
+              let turndir = "CW";
+              console.log("turnings : ", turndir);
+              if (reducerArray[trackingIndex] < 0) turndir = "CCW";
+
+              //diagnostics
+              model.gap = alpha.toFixed(1).toString();
               model.enemyAngle = this.angle.toFixed(1).toString();
               model.targetAngle = newAngle.toFixed(1).toString();
-
-              if (gap <= 2.6 && gap >= -2.6) {
+              console.log(alpha);
+              if (alpha <= 2.6 && alpha >= -2.6) {
                 this.patrolState = patrollingStates.MOVING;
                 this.stateTik = 0;
                 break;
               }
-              if (gap <= 0) {
+              if (turndir == "CW") {
                 this.angle += 2.5;
                 break;
               } else {
@@ -720,12 +625,18 @@ export class Enemy extends Entity {
 
             break;
           case patrollingStates.MOVING:
+            this.stateTik += 1;
+            if (this.stateTik >= 100) {
+              this.stateTik = 0;
+              this.patrolState = patrollingStates.WAYPOINT;
+            }
             console.log("MOVING");
             this.thrust = true;
             this.travelAngle = this.angle;
             if (this.velocity.getMag() >= MAX_PLAYER_SPEED) {
               this.patrolState = patrollingStates.NAVIGATING;
               this.thrust = false;
+              this.stateTik = 0;
             }
 
             break;
@@ -752,6 +663,20 @@ export class Enemy extends Entity {
             break;
           case patrollingStates.STOPPING:
             console.log("slowing down");
+
+            while (this.velocity.getMag() > 3) {
+              if (this.velocity.x < 0) this.velocity.x += 1;
+              else this.velocity.x -= 1;
+
+              if (this.velocity.y < 0) this.velocity.y += 1;
+              else this.velocity.y -= 1;
+
+              await this.sleep(50);
+            }
+            this.velocity.x = 0;
+            this.velocity.y = 0;
+            this.patrolState = patrollingStates.IDLE;
+            /* 
             if (this.velocity.getMag() > 5) {
               this.travelAngle = this.angle;
               console.log("reversing");
@@ -768,7 +693,7 @@ export class Enemy extends Entity {
               this.thrust = false;
               this.reversethrust = false;
               this.patrolState = patrollingStates.IDLE;
-            }
+            } */
             break;
         }
 

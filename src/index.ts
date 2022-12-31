@@ -11,7 +11,7 @@ import { BackGround } from "./lib/background";
 let touches = [];
 let myBackGround;
 
-enum DeviceType {
+export enum DeviceType {
   IOS = "ios:",
   ANDROID = "android",
   DESKTOP = "desktop",
@@ -25,6 +25,8 @@ export enum GameStates {
 }
 
 export let model = {
+  mobiletoggle: false,
+
   gap: "",
   enemyAngle: "",
   targetAngle: "",

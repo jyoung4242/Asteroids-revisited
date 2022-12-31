@@ -22,7 +22,7 @@ export enum HUDparameters {
 //Level progression and spawn rate
 let spawnRate = 7.5;
 let spawnTimer = 0;
-let enemySpawnRate = 3;
+let enemySpawnRate = 30;
 let enemySpawnTimer = 0;
 let enemySpawnedFlag: boolean = false;
 
@@ -297,12 +297,12 @@ export class PlayState extends State {
         this.firelatch = false;
       }
     }
-    /* 
+
     //generate new Asteroid
     if (spawnTimer >= spawnRate) {
       spawnTimer = 0;
       Asteroid.spawn();
-    } */
+    }
 
     //generate new Enemy
     if (enemySpawnTimer >= enemySpawnRate) {

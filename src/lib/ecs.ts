@@ -253,6 +253,7 @@ export class Player extends Entity {
           clearEnemySpawnFlag();
           //die and reduce lives, and refresh .entities
           sfx.play("astBoom");
+          this.ammo = 25;
           model.entities = [model.entities[0]];
           let tempSize;
           engine.stopEngine();
@@ -327,6 +328,7 @@ export class Player extends Entity {
           model.entities = [model.entities[0]];
           let tempSize;
           engine.stopEngine();
+          this.ammo = 25;
           if (this.screenw <= this.screenh) tempSize = this.screenw / 13;
           else tempSize = this.screenh / 13;
           this.position.setCoord(this.screenw / 2 - tempSize / 2, this.screenh / 2 - tempSize / 2);
@@ -552,7 +554,7 @@ export class Asteroid extends Entity {
     //check for bullet collisions
     //get bullets
     const listOfBullets = model.entities.filter(ent => {
-      return ent.type == "BULLET";
+      return ent.type == "BULLET" || ent.type == "BADBULLET";
     });
 
     //loop through bullets and check for collisions

@@ -1,13 +1,19 @@
 import { GameState, State } from "./gameState";
-import { GameStates, bgm, sfx } from "..";
+import { GameStates, bgm, sfx, DeviceType } from "..";
 import { Input } from "@peasy-lib/peasy-input";
 
 export class MenuState extends State {
+  touchHandler: any = null;
+  toggle;
   mapping: any;
   model: any;
   controller = new AbortController();
   static template = `
   <div class="content menu" \${===isMenu}>
+    <span class="toggleLabel" >ENABLE TOUCHCONTROLS</span>
+    <div class="touchtoggle">
+      <div id="touchtoggle" class="togglebutton"></div>
+    </div>
     <span class="title" style="font-size: \${css.TitleFontSize};">ASTEROIDS PLUS 2.0</span>  
     <span class="deskopStart" \${!==isMobile}>PRESS ENTER KEY TO BEGIN</span>
     <span class="mobileStart" \${===isMobile}>TAP SCREEN TO BEGIN</span>
@@ -16,6 +22,14 @@ export class MenuState extends State {
   constructor() {
     super("menu");
   }
+
+  enableTouch = () => {
+    if (!this.touchHandler) {
+      this.touchHandler = document.addEventListener("touchstart", e => this.transition_menu(this.model), {
+        signal: this.controller.signal,
+      });
+    }
+  };
 
   transition_menu = function (model: any) {
     GameState.set("game", "default", model);
@@ -27,7 +41,9 @@ export class MenuState extends State {
     model.gamestate = GameStates.MENU;
 
     if (model.isMobile) {
-      document.addEventListener("touchstart", e => this.transition_menu(model), { signal: this.controller.signal });
+      this.touchHandler = document.addEventListener("touchstart", e => this.transition_menu(model), {
+        signal: this.controller.signal,
+      });
     } else {
       this.mapping = Input.map(
         {
@@ -45,6 +61,26 @@ export class MenuState extends State {
         }
       );
     }
+    /* setTimeout(() => {
+      this.toggle = document.getElementById("touchtoggle");
+      this.toggle.addEventListener("click", () => {
+        model.mobiletoggle = !model.mobiletoggle;
+
+        const parent = this.toggle.parentElement;
+        if (model.mobiletoggle) {
+          parent.style.justifyContent = "end";
+          model.deviceType = DeviceType.IOS;
+          if (!this.touchHandler)
+            this.touchHandler = document.addEventListener("touchstart", e => this.transition_menu(model), {
+              signal: this.controller.signal,
+            });
+        } else {
+          parent.style.justifyContent = "start";
+          model.deviceType = DeviceType.DESKTOP;
+          if (this.touchHandler) this.controller.abort();
+        }
+      });
+    }, 250); */
   }
 
   public async exit(_next: State, ...params: any) {
@@ -53,6 +89,9 @@ export class MenuState extends State {
     if (this.mapping) this.mapping.unmap();
     model.gamestate = "transition";
     if (model.isMobile) {
+      this.controller.abort();
+    }
+    if (this.touchHandler) {
       this.controller.abort();
     }
 
