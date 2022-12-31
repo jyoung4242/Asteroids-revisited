@@ -1,4 +1,4 @@
-import { Entity, Vector } from "./ecs";
+import { DESKTOP_SCALING, Entity, Vector } from "./ecs";
 import { model, sfx } from "..";
 import enemyImage from "../assets/images/enemyship.png";
 import enemybolt from "../assets/images/enemyblaster.png";
@@ -81,6 +81,9 @@ export class Enemy extends Entity {
     this.screenh = h;
     this.screenw = w;
     let tempSize = 0;
+
+    if (model.isMobile) this.mobileScaling = "0.6";
+    else this.mobileScaling = DESKTOP_SCALING;
 
     if (w <= h) tempSize = w / 13;
     else tempSize = h / 13;
@@ -399,27 +402,6 @@ export class Enemy extends Entity {
             this.velocity.y = 0;
             this.attackState = attackStates.TRACKING;
 
-            /*             this.patrolState = patrollingStates.IDLE;
-            console.log("slowing down");
-            if (this.velocity.getMag() > 10) {
-              this.travelAngle = this.velocity.getAngle();
-              //get current velocity angle
-
-              console.log("reversing");
-              console.log("speed", this.velocity.getMag());
-              console.log("velocity vector", this.velocity.x, this.velocity.y);
-              this.thrust = false;
-              this.reversethrust = true;
-            } else if (this.velocity.getMag() < 10) {
-              console.log("no thrust");
-              console.log("speed", this.velocity.getMag());
-              console.log("velocity vector", this.velocity.x, this.velocity.y);
-              this.velocity.setCoord(0, 0);
-              this.travelAngle = this.angle;
-              this.thrust = false;
-              this.reversethrust = false;
-              this.attackState = attackStates.TRACKING;
-            } */
             break;
           case attackStates.TRACKING:
             vAttack = this.position.subtract(model.entities[0].position);
@@ -431,7 +413,6 @@ export class Enemy extends Entity {
             attackAngle = thetaAttack;
             console.log("new angle: ", thetaAttack);
 
-            //attackAngle = thetaAttack + 180;
             this.attackState = attackStates.TURNING;
             break;
           case attackStates.TURNING:
@@ -449,6 +430,7 @@ export class Enemy extends Entity {
                 while (attackAngle >= 360) attackAngle -= 360;
               }
               console.log("in turning: new angle/this.angle: ", attackAngle, this.angle);
+
               const alpha = attackAngle - this.angle;
               const beta = attackAngle - this.angle + 360;
               const gamma = attackAngle - this.angle - 360;
@@ -717,6 +699,8 @@ export class enemyBullet extends Entity {
     super("badbullet");
     this.type = "BADBULLET";
 
+    if (model.isMobile) this.mobileScaling = "0.6";
+    else this.mobileScaling = DESKTOP_SCALING;
     this.size.x = shipsize.x / 4;
     this.size.y = shipsize.y / 3;
     this.radius = this.size.x / 2;

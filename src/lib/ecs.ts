@@ -7,6 +7,7 @@ let Chance = require("chance");
 let chance = new Chance();
 const MAX_PLAYER_SPEED = 650;
 const MAX_PLAYER_SPEED_MOBILE = 325;
+export const DESKTOP_SCALING = "1";
 
 import plr from "../assets/images/player1.png";
 import asteroid from "../assets/images/asteroid.png";
@@ -86,7 +87,7 @@ export class Entity {
   name: string;
   radius: number;
   isVisible: boolean = false;
-  mobileScaling: string = "";
+  mobileScaling: string = DESKTOP_SCALING;
 
   constructor(name: string) {
     this.name = name;
@@ -128,7 +129,8 @@ export class Player extends Entity {
     this.radius;
     this.screenh = screenh;
     this.screenw = screenw;
-    this.mobileScaling = "";
+    if (model.isMobile) this.mobileScaling = "0.6";
+    else this.mobileScaling = DESKTOP_SCALING;
 
     if (screenw <= screenh) tempSize = screenw / 13;
     else tempSize = screenh / 13;
@@ -443,7 +445,7 @@ export class Asteroid extends Entity {
     this.mass = this.sizeMap[selection].mass;
     this.reward = this.sizeMap[selection].reward;
     if (model.isMobile) this.mobileScaling = this.sizeMap[selection].scaling;
-    else this.mobileScaling = "";
+    else this.mobileScaling = DESKTOP_SCALING;
     this.ssPosition = "0px 0px";
 
     //load up frames
@@ -623,6 +625,8 @@ class Bullet extends Entity {
     else this.position = model.spawnPoint2;
     this.position.y -= this.size.y / 2;
     this.velocity.setPolar(6.5, this.angle);
+    if (model.isMobile) this.mobileScaling = "0.6";
+    else this.mobileScaling = DESKTOP_SCALING;
   }
 
   destroy() {

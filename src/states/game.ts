@@ -2,7 +2,7 @@ import { GameState, State } from "./gameState";
 import { Player, Asteroid } from "../lib/ecs";
 import { model, GameStates, bgm, sfx } from "..";
 import { Input } from "@peasy-lib/peasy-input";
-import { Physics } from "@peasy-lib/peasy-physics";
+import { Physics, Vector, Stadium, Circle, Entity as PhysicsEntity, Intersection } from "@peasy-lib/peasy-physics";
 import { Enemy } from "../lib/AI";
 //import { Lighting, Vector, Light } from "@peasy-lib/peasy-lighting";
 
@@ -75,7 +75,7 @@ export class PlayState extends State {
   static template = `
   <div class="content" \${===isGame}>
       
-    <div>
+    <div class="HUD">
       <div class="HUD_Health \${mobileCSSstring}">
         <span class="HUD_Health_title">HEALTH</span>
         <div class="healthflex">
@@ -99,7 +99,7 @@ export class PlayState extends State {
         </div>    
           
       </div>
-      <div>
+      <div class="HUD">
         <div class="LivesSection" style="font-size: \${css.HUDfontSize};">
           Lives: 
           <div class="livesIcon" style="width: \${css.livesIconWidth}" \${===lives1}></div>
@@ -127,7 +127,7 @@ export class PlayState extends State {
 
     </div>
     
-    <div class="\${entity.type}" \${entity<=*entities:id} style="top: \${entity.position.y}px; left: \${entity.position.x}px; width: \${entity.size.x}px; height: \${entity.size.y}px; transform: scale(\${entity.mobileScaling}) ">
+    <div class="\${entity.type}" \${entity<=*entities:id} style="width: \${entity.size.x}px; height: \${entity.size.y}px; transform: translate(\${entity.position.x}px, \${entity.position.y}px) rotate(-90deg) scale(\${entity.mobileScaling});">
       <div class="inner" style="rotate: \${entity.angle}deg; background-image:url(\${entity.texture});background-position: \${entity.ssPosition};background-size:\${entity.textureSize};">
       </div>
     </div>
@@ -147,6 +147,8 @@ export class PlayState extends State {
   </div>`;
 
   //  <span class="diag">FPS: \${fps}  Enemy State: \${enemystate} Patrol State: \${patrolstate} Attack State: \${attackstate} Evade State: \${evadestate} E speeed: \${espeed}  distance: \${distanceToDest} gap: \${gap} e Angle: \${enemyAngle} t angle: \${targetAngle}</span>
+
+  //transform: translate(\${entity.position.x}px, \${entity.position.y}px) scale(\${entity.mobileScaling},\${entity.mobileScaling});
 
   constructor() {
     super("game");
