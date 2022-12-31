@@ -26,8 +26,8 @@ let newAngle: number | null = null;
 let ammoTimerBurnoff: number = 6;
 let ammoTimerBurnoffTik: number = 0;
 
-const MAX_PLAYER_SPEED = 80;
-const MAX_PLAYER_SPEED_MOBILE = 80;
+const MAX_PLAYER_SPEED = 100;
+const MAX_PLAYER_SPEED_MOBILE = 100;
 
 enum enemyAIStates {
   IDLE = "IDLE",
