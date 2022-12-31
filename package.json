@@ -30,6 +30,7 @@
   "dependencies": {
     "@peasy-lib/peasy-input": "^0.2.0",
     "@peasy-lib/peasy-lighting": "^0.2.3",
+    "@peasy-lib/peasy-physics": "^0.2.0",
     "@peasy-lib/peasy-ui": "^0.9.19",
     "alea": "^1.0.1",
     "chance": "^1.1.9",

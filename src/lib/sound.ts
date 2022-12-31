@@ -1,6 +1,7 @@
 import { Howl } from "howler";
 import bgm from "../assets/audio/bgm.mp3";
 import playerfire from "../assets/audio/playerfire.mp3";
+import enemyfire from "../assets/audio/enemyzap.mp3";
 import ship2Ast from "../assets/audio/Ship2Asteroid.mp3";
 import AstBoom from "../assets/audio/boom.mp3";
 import targetHit from "../assets/audio/targetHit.mp3";
@@ -10,6 +11,7 @@ import col3 from "../assets/audio/collision3.mp3";
 
 export class SFX {
   pFire = new Howl({ src: playerfire });
+  eFire = new Howl({ src: enemyfire });
   s2a = new Howl({ src: ship2Ast });
   astBoom = new Howl({ src: AstBoom });
   targetHit = new Howl({ src: targetHit });
@@ -19,6 +21,7 @@ export class SFX {
 
   gameSfx = {
     playerfire: this.pFire,
+    enemyfire: this.eFire,
     ship2asteroid: this.s2a,
     astBoom: this.astBoom,
     targetHit: this.targetHit,

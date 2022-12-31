@@ -107,6 +107,27 @@ body {
   backface-visibility: hidden;
 }
 
+.ENEMY {
+  position: fixed;
+  border-radius: 50%;
+  transform: rotate(-90deg);
+  transform-origin: center;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.BADBULLET {
+  position: fixed;
+  transform: rotate(-90deg);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  transform-origin: center;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
 .inner {
   width: 100%;
   height: 100%;
@@ -475,4 +496,39 @@ canvas {
   left: 0;
   width: 100%;
   height: 100%;
+}
+
+.touchtoggle {
+  border: 1px solid #dddddd;
+  border-radius: 1000px;
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 0;
+  margin-top: 10px;
+  width: 5%;
+  height: 5%;
+  display: flex;
+  justify-content: start;
+  align-items: center;
+}
+
+.togglebutton {
+  position: relative;
+  height: 90%;
+  aspect-ratio: 1/1;
+  margin-left: 4px;
+  margin-right: 4px;
+
+  background-color: #dddddd;
+  border: #dddddd 1px solid;
+  border-radius: 50%;
+}
+
+.toggleLabel {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-135%);
+  font-size: xx-small;
 }

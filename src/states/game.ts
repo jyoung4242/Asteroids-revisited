@@ -2,6 +2,8 @@ import { GameState, State } from "./gameState";
 import { Player, Asteroid } from "../lib/ecs";
 import { model, GameStates, bgm, sfx } from "..";
 import { Input } from "@peasy-lib/peasy-input";
+import { Physics } from "@peasy-lib/peasy-physics";
+import { Enemy } from "../lib/AI";
 //import { Lighting, Vector, Light } from "@peasy-lib/peasy-lighting";
 
 // Load Chance
@@ -20,6 +22,13 @@ export enum HUDparameters {
 //Level progression and spawn rate
 let spawnRate = 7.5;
 let spawnTimer = 0;
+let enemySpawnRate = 30;
+let enemySpawnTimer = 0;
+let enemySpawnedFlag: boolean = false;
+
+export const clearEnemySpawnFlag = () => {
+  enemySpawnedFlag = false;
+};
 
 export const updateHudData = (param: HUDparameters, incValue: number) => {
   switch (param) {
@@ -31,6 +40,7 @@ export const updateHudData = (param: HUDparameters, incValue: number) => {
         model.entities[0].exp = 0;
         model.gameLevel += 1;
         spawnRate *= 0.95;
+        enemySpawnRate * +0.95;
         model.entities[0].health = 10;
         model.health = 10;
       }
@@ -50,7 +60,7 @@ export const resetGame = () => {
   GameState.set("menu", "default", model);
 };
 
-const physicsInterval = 0.016;
+const physicsInterval = 0.016; //.016
 
 export class PlayState extends State {
   startime: number | undefined = undefined;
@@ -116,7 +126,7 @@ export class PlayState extends State {
       </div>
 
     </div>
-    <span class="diag">FPS: \${fps}</span><span><span>  
+    
     <div class="\${entity.type}" \${entity<=*entities:id} style="top: \${entity.position.y}px; left: \${entity.position.x}px; width: \${entity.size.x}px; height: \${entity.size.y}px; transform: scale(\${entity.mobileScaling}) ">
       <div class="inner" style="rotate: \${entity.angle}deg; background-image:url(\${entity.texture});background-position: \${entity.ssPosition};background-size:\${entity.textureSize};">
       </div>
@@ -135,6 +145,8 @@ export class PlayState extends State {
         <div class="but_rel" \${pointerdown@=>fire} \${pointerup@=>stopfiring}></div>
     </div>
   </div>`;
+
+  //  <span class="diag">FPS: \${fps}  Enemy State: \${enemystate} Patrol State: \${patrolstate} Attack State: \${attackstate} Evade State: \${evadestate} E speeed: \${espeed}  distance: \${distanceToDest} gap: \${gap} e Angle: \${enemyAngle} t angle: \${targetAngle}</span>
 
   constructor() {
     super("game");
@@ -164,6 +176,7 @@ export class PlayState extends State {
         d: { action: "right", repeat: true },
         Enter: { action: "fire", repeat: false },
         Shift: { action: "fire", repeat: false },
+        Escape: { action: "pause", repeat: false },
       },
       (action: string, doing: boolean) => {
         if (doing) {
@@ -183,6 +196,9 @@ export class PlayState extends State {
             case "fire":
               model.keypresses.fire = "FIRE";
               break;
+            case "pause":
+              if (PlayState.running == true) this.stopEngine();
+              else this.startEngine();
             default:
               model.keypresses.direction = "NONE";
               model.keypresses.fire = "NONE";
@@ -250,6 +266,9 @@ export class PlayState extends State {
     this.lastPhysicsUpdate += deltaTime;
     this.lastRenderUpdate += deltaTime;
     spawnTimer += deltaTime;
+    if (model.gameLevel >= 1 && !enemySpawnedFlag) {
+      enemySpawnTimer += deltaTime;
+    }
 
     //check for input
     if (model.isMobile && model.entities[0]) {
@@ -283,9 +302,15 @@ export class PlayState extends State {
 
     //generate new Asteroid
     if (spawnTimer >= spawnRate) {
-      console.log("spawning");
       spawnTimer = 0;
       Asteroid.spawn();
+    }
+
+    //generate new Enemy
+    if (enemySpawnTimer >= enemySpawnRate) {
+      enemySpawnTimer = 0;
+      enemySpawnedFlag = true;
+      Enemy.spawn();
     }
 
     while (this.lastPhysicsUpdate >= physicsInterval) {

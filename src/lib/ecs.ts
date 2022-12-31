@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { model, bgm, sfx } from "..";
+import { model, sfx } from "..";
 
 // Load Chance
 let Chance = require("chance");
@@ -11,7 +11,8 @@ const MAX_PLAYER_SPEED_MOBILE = 325;
 import plr from "../assets/images/player1.png";
 import asteroid from "../assets/images/asteroid.png";
 import bolt from "../assets/images/playerbullet.png";
-import { PlayState, HUDparameters, updateHudData, resetGame } from "../states/game";
+
+import { HUDparameters, updateHudData, resetGame, clearEnemySpawnFlag } from "../states/game";
 
 export class Vector {
   x: number;
@@ -74,7 +75,7 @@ export class Vector {
   }
 }
 
-class Entity {
+export class Entity {
   position: Vector = new Vector(0, 0);
   size: Vector = new Vector(0, 0);
   velocity: Vector = new Vector(0, 0);
@@ -249,8 +250,10 @@ export class Player extends Entity {
         this.invincibleTimer = 3;
         updateHudData(HUDparameters.HEALTH, -1);
         if (this.health <= 0) {
+          clearEnemySpawnFlag();
           //die and reduce lives, and refresh .entities
           sfx.play("astBoom");
+          this.ammo = 25;
           model.entities = [model.entities[0]];
           let tempSize;
           engine.stopEngine();
@@ -298,6 +301,63 @@ export class Player extends Entity {
         }
       }
     });
+
+    /****************************************** */
+    // checking for enemy bullet collisions
+    /****************************************** */
+    //check for asteroid collisions
+    //get asteroids
+    const listOfenemyBullets = model.entities.filter(ent => {
+      return ent.type == "BADBULLET";
+    });
+
+    listOfenemyBullets.forEach(bullet => {
+      const distance = this.centerpoint.getDistance(bullet.centerpoint);
+
+      if (distance < this.radius * 0.95 + bullet.radius * 0.95) {
+        //we have a collision
+        sfx.play("targetHit");
+        bullet.destroy();
+        this.health -= 1;
+        this.invincibleTimer = 3;
+        updateHudData(HUDparameters.HEALTH, -1);
+        if (this.health <= 0) {
+          //die and reduce lives, and refresh .entities
+          sfx.play("astBoom");
+          clearEnemySpawnFlag();
+          model.entities = [model.entities[0]];
+          let tempSize;
+          engine.stopEngine();
+          this.ammo = 25;
+          if (this.screenw <= this.screenh) tempSize = this.screenw / 13;
+          else tempSize = this.screenh / 13;
+          this.position.setCoord(this.screenw / 2 - tempSize / 2, this.screenh / 2 - tempSize / 2);
+          this.velocity.setCoord(0, 0);
+          this.lives -= 1;
+          this.health = 10;
+          model.health = 10;
+          updateHudData(HUDparameters.LIVES, -1);
+
+          if (this.lives < 0) {
+            //game over
+            model.statusmessage = "GAME OVER";
+            model.statusIsVisible = true;
+            setTimeout(() => {
+              model.statusIsVisible = false;
+              resetGame();
+            }, 3000);
+          } else {
+            model.statusmessage = "DIED - BEGIN AGAIN";
+            model.statusIsVisible = true;
+            setTimeout(() => {
+              model.statusIsVisible = false;
+              engine.startEngine();
+            }, 1500);
+          }
+        }
+      }
+    });
+
     //check for screen collision
     if (this.position.x > model.screenwidth) this.position.x = -10;
     if (this.position.x < -11) this.position.x = model.screenwidth - 20;
@@ -494,7 +554,7 @@ export class Asteroid extends Entity {
     //check for bullet collisions
     //get bullets
     const listOfBullets = model.entities.filter(ent => {
-      return ent.type == "BULLET";
+      return ent.type == "BULLET" || ent.type == "BADBULLET";
     });
 
     //loop through bullets and check for collisions
@@ -585,8 +645,3 @@ class Bullet extends Entity {
     if (this.position.y > model.screenheight) this.destroy();
   }
 }
-
-//TODO later
-class Enemy {}
-
-class Star {}
