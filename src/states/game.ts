@@ -40,6 +40,7 @@ export const updateHudData = (param: HUDparameters, incValue: number) => {
         model.entities[0].exp = 0;
         model.gameLevel += 1;
         spawnRate *= 0.95;
+        enemySpawnRate * +0.95;
         model.entities[0].health = 10;
         model.health = 10;
       }
@@ -125,8 +126,7 @@ export class PlayState extends State {
       </div>
 
     </div>
-    <span class="diag">FPS: \${fps}  Enemy State: \${enemystate} Patrol State: \${patrolstate} Attack State: \${attackstate} Evade State: \${evadestate} E speeed: \${espeed}  distance: \${distanceToDest} gap: \${gap} e Angle: \${enemyAngle} t angle: \${targetAngle}</span>  
-
+    
     <div class="\${entity.type}" \${entity<=*entities:id} style="top: \${entity.position.y}px; left: \${entity.position.x}px; width: \${entity.size.x}px; height: \${entity.size.y}px; transform: scale(\${entity.mobileScaling}) ">
       <div class="inner" style="rotate: \${entity.angle}deg; background-image:url(\${entity.texture});background-position: \${entity.ssPosition};background-size:\${entity.textureSize};">
       </div>
@@ -145,6 +145,8 @@ export class PlayState extends State {
         <div class="but_rel" \${pointerdown@=>fire} \${pointerup@=>stopfiring}></div>
     </div>
   </div>`;
+
+  //  <span class="diag">FPS: \${fps}  Enemy State: \${enemystate} Patrol State: \${patrolstate} Attack State: \${attackstate} Evade State: \${evadestate} E speeed: \${espeed}  distance: \${distanceToDest} gap: \${gap} e Angle: \${enemyAngle} t angle: \${targetAngle}</span>
 
   constructor() {
     super("game");
