@@ -49,6 +49,9 @@ export class BGM {
   play() {
     this.bgm.play();
   }
+  stop() {
+    this.bgm.stop();
+  }
   toggleMute() {
     if (this.muted) {
       this.muted = false;

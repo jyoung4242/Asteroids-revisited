@@ -103,9 +103,6 @@ body {
 
 .PLAYER {
   position: absolute;
-  border-radius: 50%;
-  top: 0;
-  left: 0;
   transform-origin: center;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
@@ -113,20 +110,13 @@ body {
 
 .ENEMY {
   position: absolute;
-  border-radius: 50%;
-  top: 0;
-  left: 0;
   transform-origin: center;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
-  top: 0;
-  left: 0;
 }
 
 .BADBULLET {
   position: absolute;
-  top: 0;
-  left: 0;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -151,8 +141,6 @@ body {
   transform-origin: center;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
-  top: 0;
-  left: 0;
 }
 
 .BULLET {
@@ -164,8 +152,6 @@ body {
   transform-origin: center;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
-  top: 0;
-  left: 0;
 }
 
 .joystick {

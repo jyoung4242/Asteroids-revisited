@@ -139,7 +139,6 @@ export class BackGround {
     }
 
     for (let i = 0; i < this.NUM_GALAXY; i++) {
-      console.log("adding galaxies");
       const x = this.chance.integer({ min: 0, max: 100 });
       const y = this.chance.integer({ min: 0, max: 100 });
       const vx = this.chance.floating({ min: 0, max: 0.005 });
@@ -434,7 +433,7 @@ export class BackGround {
 
   fillCanvas = () => {
     const RGBarray = [];
-    console.log("entering loop");
+
     for (let tempX = 0; tempX < this.canvasWidth; tempX++) {
       for (let tempY = 0; tempY < this.canvasHeight; tempY++) {
         let [r, g, b] = this.colorScale((this.noise2d(tempX, tempY) + 1) * 0.5).rgb();
