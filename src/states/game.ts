@@ -7,6 +7,14 @@ import { Enemy } from "../lib/AI";
 import { mode } from "../../webpack.config";
 //import { Lighting, Vector, Light } from "@peasy-lib/peasy-lighting";
 
+//testing switches
+const TEST_NO_ASTEROIDS = false;
+const TEST_NO_AI = false;
+const TEST_NO_PLAYER = false;
+const TEST_NO_HUD = false;
+const TEST_AI_SPAWN_LEVEL = 5;
+const TEST_AI_SPAWN_RATE = null;
+
 // Load Chance
 let Chance = require("chance");
 // Instantiate Chance so it can be used
@@ -23,7 +31,7 @@ export enum HUDparameters {
 //Level progression and spawn rate
 let spawnRate = 7.5;
 let spawnTimer = 0;
-let enemySpawnRate = 30;
+let enemySpawnRate = chance.integer({ min: 30, max: 50 });
 let enemySpawnTimer = 0;
 let enemySpawnedFlag: boolean = false;
 let peasyLoadedFlag: boolean = false;
@@ -88,7 +96,7 @@ export class PlayState extends State {
   static template = `
   <div class="content" \${===isGame}>
   <canvas \${ ==> canvas}></canvas>
-    <div class="HUD">
+    <div class="HUD" \${===hud.display}>
       <div class="HUD_Health \${mobileCSSstring}">
         <span class="HUD_Health_title">HEALTH</span>
         <div class="healthflex">
@@ -169,7 +177,7 @@ export class PlayState extends State {
   public enter(_previous: State, ...params: any): void {
     const [model] = params;
     model.gamestate = GameStates.GAME;
-
+    model.hud.display = !TEST_NO_HUD;
     //*****************************
     //Set up game entities
     model.entities = [];
@@ -198,10 +206,12 @@ export class PlayState extends State {
           player: ["asteroid", "enemybullet"],
           asteroid: ["asteroid", "bullet", "enemybullet"],
           enemy: ["player", "bullet", "asteroid"],
+          bullet: ["enemy", "asteroid"],
+          enemybullet: ["player", "asteroid"],
         },
       });
 
-      model.gameObjects.push(new Player(model.screenwidth, model.screenheight, Physics, this.FixedStepEngine));
+      if (!TEST_NO_PLAYER) model.gameObjects.push(new Player(model.screenwidth, model.screenheight, Physics));
       peasyLoadedFlag = true;
       model.canvas.setAttribute("width", window.innerWidth.toString());
       model.canvas.setAttribute("height", window.innerHeight.toString());
@@ -327,7 +337,8 @@ export class PlayState extends State {
       this.lastPhysicsUpdate += deltaTime;
       this.lastRenderUpdate += deltaTime;
       spawnTimer += deltaTime;
-      if (model.gameLevel >= 1 && !enemySpawnedFlag) {
+
+      if (model.gameLevel >= TEST_AI_SPAWN_LEVEL && !enemySpawnedFlag) {
         enemySpawnTimer += deltaTime;
       }
 
@@ -337,7 +348,7 @@ export class PlayState extends State {
         if (model.navStatus == "RIGHT") model.gameObjects[0].turnRight();
         if (model.navStatus == "THRUST") model.gameObjects[0].accelerate();
         if (model.navStatus == "RTHRUST") model.gameObjects[0].reverse();
-        if (model.navStatus == "NONE") model.gameObjects[0].decelerate();
+        //if (model.navStatus == "NONE") model.gameObjects[0].decelerate();
 
         if (model.button.status == "pressed" && !this.firelatch) {
           model.gameObjects[0].fire();
@@ -362,17 +373,25 @@ export class PlayState extends State {
       }
 
       //generate new Asteroid
-      if (spawnTimer >= spawnRate) {
+      if (spawnTimer >= spawnRate && !TEST_NO_ASTEROIDS) {
         spawnTimer = 0;
         Asteroid.spawn(Physics);
       }
 
       //generate new Enemy
-      /* if (enemySpawnTimer >= enemySpawnRate) {
-        enemySpawnTimer = 0;
-        enemySpawnedFlag = true;
-        Enemy.spawn(Physics);
-      } */
+      if (TEST_AI_SPAWN_RATE == null) {
+        if (enemySpawnTimer >= enemySpawnRate && !TEST_NO_AI) {
+          enemySpawnTimer = 0;
+          enemySpawnedFlag = true;
+          Enemy.spawn(Physics);
+        }
+      } else {
+        if (enemySpawnTimer >= TEST_AI_SPAWN_RATE && !TEST_NO_AI) {
+          enemySpawnTimer = 0;
+          enemySpawnedFlag = true;
+          Enemy.spawn(Physics);
+        }
+      }
 
       while (this.lastPhysicsUpdate >= physicsInterval) {
         //update physics here

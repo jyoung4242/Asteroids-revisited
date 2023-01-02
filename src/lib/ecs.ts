@@ -15,7 +15,7 @@ import plr from "../assets/images/player1.png";
 import asteroid from "../assets/images/asteroid.png";
 import bolt from "../assets/images/playerbullet.png";
 
-import { HUDparameters, updateHudData, resetGame, clearEnemySpawnFlag } from "../states/game";
+import { HUDparameters, updateHudData, resetGame, clearEnemySpawnFlag, stopeEngine, startEngine } from "../states/game";
 
 // Load Chance
 let Chance = require("chance");
@@ -24,7 +24,7 @@ let chance = new Chance();
 const MAX_PLAYER_SPEED = 650;
 const MAX_PLAYER_SPEED_MOBILE = 325;
 export const DESKTOP_SCALING = "1";
-const THRUSTFORCE = 20;
+const THRUSTFORCE = 25;
 
 /* 
 export class Vector {
@@ -94,7 +94,7 @@ export function angle2rad(angle: number): number {
 
 export function vectorDistance(a: Vector, b: Vector): number {
   let rsltVector: Vector;
-  rsltVector = a.subtract(b, true);
+  rsltVector = a.subtract(b, false);
   return Math.sqrt(rsltVector.x * rsltVector.x + rsltVector.y * rsltVector.y);
 }
 
@@ -167,7 +167,7 @@ export class Player extends GameObject {
   entity: any;
   gameLoop: any;
 
-  constructor(screenw: number, screenh: number, engine: Physics, loop: any) {
+  constructor(screenw: number, screenh: number, engine: Physics) {
     super("player");
     this.type = "PLAYER";
     this.health = 10;
@@ -180,7 +180,7 @@ export class Player extends GameObject {
     this.radius;
     this.screenh = screenh;
     this.screenw = screenw;
-    this.gameLoop = loop;
+    //this.gameLoop = loop;
 
     if (model.isMobile) this.mobileScaling = "0.6";
     else this.mobileScaling = DESKTOP_SCALING;
@@ -202,7 +202,7 @@ export class Player extends GameObject {
     //this.shape = new Stadium(new Vector(0, 0), new Vector(this.size.x, this.size.y * 0.6), "horizontal", 90);
     this.entity = new Entity(this.position, 0);
     this.entity.shapes = [
-      { position: new Vector(0, 0), size: new Vector(this.size.x, this.size.y * 0.6), type: ["player"] },
+      { position: new Vector(0, 0), size: new Vector(this.size.x, this.size.y * 0.6), types: ["player"] },
     ];
     this.entity.forces = [];
     this.entity.maxSpeed = 400;
@@ -228,7 +228,8 @@ export class Player extends GameObject {
             return index != 0;
           });
           Physics.removeEntities(entitiesToRemove);
-          this.PhysicsEntity.speed = 0;
+          this.PhysicsEntity.velocity.x = 0;
+          this.PhysicsEntity.velocity.y = 0;
           let tempSize;
           if (this.screenw <= this.screenh) tempSize = this.screenw / 13;
           else tempSize = this.screenh / 13;
@@ -261,7 +262,6 @@ export class Player extends GameObject {
         }
       } else if ((entity.entity as GameObject).type == "BADBULLET") {
         sfx.play("targetHit");
-        (entity.entity as Bullet).destroy();
         this.health -= 1;
         this.invincibleTimer = 3;
         updateHudData(HUDparameters.HEALTH, -1);
@@ -271,7 +271,8 @@ export class Player extends GameObject {
           clearEnemySpawnFlag();
           model.gameObjects = [model.gameObjects[0]];
           let tempSize;
-          this.gameLoop.stopEngine();
+          //this.gameLoop.stopEngine();
+          stopeEngine();
           this.ammo = 25;
           if (this.screenw <= this.screenh) tempSize = this.screenw / 13;
           else tempSize = this.screenh / 13;
@@ -299,7 +300,8 @@ export class Player extends GameObject {
             model.statusIsVisible = true;
             setTimeout(() => {
               model.statusIsVisible = false;
-              this.gameLoop.startEngine();
+              //this.gameLoop.startEngine();
+              startEngine();
             }, 1500);
           }
         }
@@ -312,9 +314,6 @@ export class Player extends GameObject {
     if (this.ammo > 0) {
       sfx.play("playerfire");
       this.gunToggle = !this.gunToggle;
-      console.log(
-        `player firing form position: ${this.position.x}, ${this.position.y} at angle ${this.angle}, and at this size ${this.size.x}, ${this.size.y}`
-      );
       model.gameObjects.push(new Bullet(this.gunToggle, this.angle, this.size, Physics));
       this.ammo -= 1;
       const displayedAmmo = ((this.ammo / 25) * 100).toFixed(1);
@@ -341,7 +340,7 @@ export class Player extends GameObject {
       name: "thrust",
       direction: dir,
       duration: 0,
-      magnitude: 500,
+      magnitude: 300,
     });
   }
 
@@ -357,7 +356,7 @@ export class Player extends GameObject {
       name: "reverse",
       direction: dir,
       duration: 0,
-      magnitude: 500,
+      magnitude: 300,
     });
   }
 
@@ -389,6 +388,13 @@ export class Player extends GameObject {
         const displayedAmmo = ((this.ammo / 25) * 100).toFixed(1);
         model.ammo = `${displayedAmmo}%`;
       }
+    }
+
+    //snap to stop
+    console.log(this.PhysicsEntity.speed);
+
+    if (this.PhysicsEntity.speed <= 20) {
+      this.PhysicsEntity.velocity = new Vector(0, 0);
     }
 
     //movement update
@@ -554,15 +560,14 @@ export class Asteroid extends GameObject {
     //PEASY PHYSICS
     //**************************** */
 
-    this.shape = new Circle(new Vector(-5, 5), this.radius * 0.8, 90);
     this.entity = new Entity(this.position);
-    //this.entity.shapes = [{ position: new Vector(-5, -5), size: { radius: this.radius * 0.75 }, type: ["asteroid"] }];
-    this.entity.shapes = [this.shape];
+    this.entity.shapes = [{ position: new Vector(-5, -5), radius: this.radius * 0.75, types: ["asteroid"] }];
     this.entity.forces = [];
     this.entity.maxSpeed = 500;
     this.entity.color = "red";
-
+    console.log(this.entity);
     this.PhysicsEntity = Physics.addEntities([this.entity])[0];
+    console.log(this.PhysicsEntity);
     this.PhysicsEntity.addForce({
       name: "initial",
       direction: this.velocity,
@@ -573,25 +578,34 @@ export class Asteroid extends GameObject {
     this.PhysicsEntity.entity = this;
     this.PhysicsEntity.mass = this.mass;
     this.PhysicsEntity.colliding = (entity, _intersection): CollidingResolution => {
-      console.log("collision with: ", (entity.entity as GameObject).type, (entity.entity as GameObject).id);
+      //guard condition for phantom collisions
+      if (
+        Physics.entities.findIndex(ent => {
+          return ent == entity;
+        }) == -1
+      ) {
+        return "remove";
+      }
+
       if ((entity.entity as GameObject).type == "ASTEROID") {
         //we have a collision
         sfx.play(chance.pickone(["col1", "col2", "col3"]));
       } else if ((entity.entity as GameObject).type == "BULLET" || (entity.entity as GameObject).type == "BADBULLET") {
         sfx.play("targetHit");
         this.health -= (entity.entity as Bullet).damage;
-        (entity.entity as Bullet).destroy();
+        //(entity.entity as Bullet).destroy();
         updateHudData(HUDparameters.SCORE, 5);
-        console.log(this.health);
         if (this.health <= 0) {
           sfx.play("astBoom");
-          console.log("asteroid dead");
           updateHudData(HUDparameters.SCORE, this.reward);
-          console.log(model.gameObjects);
           model.gameObjects[0].exp += this.reward;
           updateHudData(HUDparameters.EXPERIENCE, this.reward);
           model.gameObjects[0].ammoBonus();
-          this.destroy();
+          let removeIndex = model.gameObjects.findIndex(ent => {
+            return ent.id == this.id;
+          });
+          if (removeIndex != -1) model.gameObjects.splice(removeIndex, 1);
+          return "remove";
         }
       }
       return "collide";
@@ -599,16 +613,14 @@ export class Asteroid extends GameObject {
   }
 
   destroy() {
+    this.PhysicsEntity.deleted = true;
     let removeIndex = Physics.entities.findIndex(ent => {
       return (ent.entity as GameObject).id == this.id;
     });
     if (removeIndex != -1) Physics.entities.splice(removeIndex, 1);
-    console.log("asteroid index to be removed", removeIndex);
-
     removeIndex = model.gameObjects.findIndex(ent => {
       return ent.id == this.id;
     });
-    console.log("asteroid index to be removed", removeIndex);
     if (removeIndex != -1) model.gameObjects.splice(removeIndex, 1);
   }
 
@@ -665,7 +677,7 @@ export class Bullet extends GameObject {
   radius: number;
   centerpoint = new Vector(0, 0);
   halfsize = new Vector(0, 0);
-  mass: number = 0;
+  mass: number = 0.000001;
 
   constructor(spawnpoint: boolean, angle: number, shipsize: Vector, Physics: any) {
     super("bullet");
@@ -697,9 +709,9 @@ export class Bullet extends GameObject {
     //PEASY PHYSICS
     //**************************** */
 
-    this.shape = new Rect(new Vector(0, 0), this.size, 90);
+    //this.shape = new Rect(new Vector(0, 0), this.size, 90);
     this.entity = new Entity(this.position);
-    this.entity.shapes = [this.shape];
+    this.entity.shapes = [{ position: new Vector(0, 0), size: this.size, types: ["bullet"] }];
     this.entity.forces = [];
     this.entity.maxSpeed = 800;
     this.entity.color = "purple";
@@ -715,19 +727,24 @@ export class Bullet extends GameObject {
       duration: 0,
     });
     this.PhysicsEntity.entity = this;
+    this.PhysicsEntity.colliding = (entity, intersection): CollidingResolution => {
+      if ((entity.entity as GameObject).type != "PLAYER") {
+        const removeIndex = model.gameObjects.findIndex(ent => {
+          return ent.id == this.id;
+        });
+        if (removeIndex != -1) model.gameObjects.splice(removeIndex, 1);
+        return "remove";
+      }
+    };
   }
 
   destroy() {
-    console.log("game objects", model.gameObjects);
-    console.log("bullet destroy code block: ", (this.PhysicsEntity.entity as GameObject).id, Physics.entities);
+    this.PhysicsEntity.deleted = true;
     Physics.removeEntities([this.PhysicsEntity]);
-    console.log("entities remaining: ", Physics.entities);
     const removeIndex = model.gameObjects.findIndex(ent => {
       return ent.id == this.id;
     });
-    console.log("bullet index to be removed", removeIndex);
     if (removeIndex != -1) model.gameObjects.splice(removeIndex, 1);
-    console.log("game objects", model.gameObjects);
   }
 
   update(deltaTime) {

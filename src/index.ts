@@ -145,6 +145,7 @@ export let model = {
 
   /*HUD bindings */
   hud: {
+    displsy: true,
     health: {
       get healthbar10() {
         return model.health > 9;
@@ -205,8 +206,7 @@ export const sfx = new SFX();
 // <canvas id="cnv"></canvas>
 let template = `
 <div id="game" class="gameContainer">
- 
-  ${MenuState.template}    
+   ${MenuState.template}    
   ${PlayState.template}
 </div>`;
 
@@ -214,16 +214,11 @@ let template = `
 // so that we can hide the address bar in
 // our resize function
 
-const UA = navigator.userAgent.toLowerCase();
-if (UA.indexOf("android") > -1) model.deviceType = DeviceType.ANDROID;
-else if (UA.indexOf("iphone") > -1) model.deviceType = DeviceType.IOS;
-else if (UA.indexOf("ipad") > -1) model.deviceType = DeviceType.IOS;
-else model.deviceType = DeviceType.DESKTOP;
-
+model.deviceType = DeviceType.DESKTOP;
 UI.create(document.body, template, model);
 UI.initialize(false);
 
-const resizeScreen = (m = model) => {
+export const resizeScreen = (m = model) => {
   m.screenwidth = window.innerWidth;
   m.screenheight = window.innerHeight;
   if (m.screenwidth < m.screenheight) {

@@ -1,4 +1,14 @@
-import { Bullet, DESKTOP_SCALING, Entity, GameObject, vectorAngle, vectorDistance, vectorMag, vectorSetPolar } from "./ecs";
+import {
+  angle2rad,
+  Bullet,
+  DESKTOP_SCALING,
+  Entity,
+  GameObject,
+  vectorAngle,
+  vectorDistance,
+  vectorMag,
+  vectorSetPolar,
+} from "./ecs";
 import { model, sfx } from "..";
 import enemyImage from "../assets/images/enemyship.png";
 import enemybolt from "../assets/images/enemyblaster.png";
@@ -31,7 +41,7 @@ let ammoTimerBurnoffTik: number = 0;
 
 const MAX_PLAYER_SPEED = 100;
 const MAX_PLAYER_SPEED_MOBILE = 100;
-const THRUSTFORCE = 20;
+const THRUSTFORCE = 15;
 
 enum enemyAIStates {
   IDLE = "IDLE",
@@ -131,17 +141,27 @@ export class Enemy extends GameObject {
     //this.shape = new Stadium(new Vector(0, 0), new Vector(this.size.x, this.size.y * 0.6), "horizontal", 90);
     this.entity = new Entity(this.position, 0);
     this.entity.shapes = [
-      { position: new Vector(0, 0), size: new Vector(this.size.x, this.size.y * 0.6), type: ["player"] },
+      { position: new Vector(0, 0), size: new Vector(this.size.x, this.size.y * 0.6), types: ["enemy"] },
     ];
     this.entity.forces = [];
-    this.entity.maxSpeed = 200;
+    this.entity.maxSpeed = 80;
     this.entity.color = "yellow";
     this.PhysicsEntity = Physics.addEntities(this.entity)[0];
     this.PhysicsEntity.entity = this;
     this.PhysicsEntity.mass = this.mass;
     this.PhysicsEntity.colliding = (entity: PhysicsEntity, intersection: Intersection): CollidingResolution => {
+      //guard condition for phantom collisions
+      if (
+        Physics.entities.findIndex(ent => {
+          return ent == entity;
+        }) == -1
+      ) {
+        return "collide";
+      }
       if ((entity.entity as GameObject).type == "ASTEROID") {
         this.enemyState = enemyAIStates.IDLE;
+        this.attackState = attackStates.IDLE;
+        this.patrolState = patrollingStates.IDLE;
         sfx.play("ship2asteroid");
         this.health -= 1;
         this.invincibleTimer = 3;
@@ -151,7 +171,6 @@ export class Enemy extends GameObject {
           this.destroy();
         }
       } else if ((entity.entity as GameObject).type == "BULLET") {
-        this.enemyState = enemyAIStates.IDLE;
         sfx.play("targetHit");
         this.health -= 1;
         (entity.entity as Bullet).destroy();
@@ -162,9 +181,16 @@ export class Enemy extends GameObject {
           model.gameObjects[0].exp += this.reward;
           updateHudData(HUDparameters.EXPERIENCE, this.reward);
           model.gameObjects[0].ammoBonus();
-          this.destroy();
+          const removeIndex = model.gameObjects.findIndex(ent => {
+            return ent.id == this.id;
+          });
+          model.gameObjects.splice(removeIndex, 1);
+          return "remove";
         } else if ((entity.entity as GameObject).type == "PLAYER") {
+          console.log("player collision");
           this.enemyState = enemyAIStates.IDLE;
+          this.attackState = attackStates.IDLE;
+          this.patrolState = patrollingStates.IDLE;
           sfx.play("targetHit");
         }
       }
@@ -181,6 +207,7 @@ export class Enemy extends GameObject {
   }
 
   destroy() {
+    this.PhysicsEntity.deleted = true;
     Physics.removeEntities([this.PhysicsEntity]);
     const removeIndex = model.gameObjects.findIndex(ent => {
       return ent.id == this.id;
@@ -188,54 +215,25 @@ export class Enemy extends GameObject {
     model.gameObjects.splice(removeIndex, 1);
   }
 
-  // LINE/LINE collision
-  lineLine(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number, x4: number, y4: number): boolean {
-    // calculate the distance to intersection point
-    const uA = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / ((y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1));
-    const uB = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / ((y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1));
-    // if uA and uB are between 0-1, lines are colliding
-    if (uA >= 0 && uA <= 1 && uB >= 0 && uB <= 1) return true;
-    return false;
-  }
-
-  lineRect(x1: number, y1: number, x2: number, y2: number, rx: number, ry: number, rw: number, rh: number): boolean {
-    // check if the line has hit any of the rectangle's sides
-    // uses the Line/Line function below
-    const left = this.lineLine(x1, y1, x2, y2, rx, ry, rx, ry + rh);
-    const right = this.lineLine(x1, y1, x2, y2, rx + rw, ry, rx + rw, ry + rh);
-    const top = this.lineLine(x1, y1, x2, y2, rx, ry, rx + rw, ry);
-    const bottom = this.lineLine(x1, y1, x2, y2, rx, ry + rh, rx + rw, ry + rh);
-    // if ANY of the above are true, the line
-    // has hit the rectangle
-    if (left || right || top || bottom) return true;
-    return false;
-  }
-
-  collisionCheck(sX: number, sY: number, dX: number, dY: number): boolean {
-    return this.lineRect(sX, sY, dX, dY, this.position.x, this.position.y, this.size.x, this.size.y);
-  }
-
-  ang2Rad = (a: number): number => {
-    return a * (Math.PI / 180);
-  };
-
-  scanField = (): boolean => {
+  scanField = (): void => {
     /*************************************************** */
     // PLAYER DETECTION
     /*************************************************** */
+    playerDetected = false;
     const detectionVector: Vector = new Vector(this.screenw / 4, this.screenh / 4);
     const detectionMagnitude = vectorMag(detectionVector); //detectionVector.getMag();
-    const playerDistance = model.gameObjects[0].position.getDistance(this.position);
+    let playerDistance = vectorDistance(model.gameObjects[0].position, this.PhysicsEntity.position);
+    if (playerDistance == undefined || playerDistance == null || playerDistance == 0) playerDistance = Infinity;
     console.log("scanning for player: ", playerDistance, detectionMagnitude);
     if (playerDistance < detectionMagnitude) {
       //player is close enough to detect
+      console.log("detected!");
       playerDetected = true;
       this.enemyState = enemyAIStates.ENGAGING_PLAYER;
       this.attackState = attackStates.STOPPNG;
-      return true;
+      return;
     }
-
-    return false;
+    return;
   };
 
   sleep(ms) {
@@ -245,11 +243,13 @@ export class Enemy extends GameObject {
   turnLeft() {
     this.PhysicsEntity.orientation -= 3;
     this.angle = this.PhysicsEntity.orientation;
+    //console.log("turn left: ", this.PhysicsEntity.orientation, this.angle);
   }
 
   turnRight() {
     this.PhysicsEntity.orientation += 3;
     this.angle = this.PhysicsEntity.orientation;
+    //console.log("turn right: ", this.PhysicsEntity.orientation, this.angle);
   }
 
   async update(updatetime) {
@@ -267,7 +267,7 @@ export class Enemy extends GameObject {
       this.ammoCounter += updatetime;
 
       if (this.ammoCounter >= 1.5) {
-        console.log("regenerating ammo");
+        //console.log("regenerating ammo");
         this.ammo += 1;
         this.ammoCounter = 0;
       }
@@ -290,6 +290,7 @@ export class Enemy extends GameObject {
         duration: 0,
         magnitude: 500,
       });
+      //console.log("thrust set");
     }
     if (this.reversethrust) {
       const currentAngle = this.PhysicsEntity.orientation;
@@ -305,30 +306,19 @@ export class Enemy extends GameObject {
         duration: 0,
         magnitude: 500,
       });
+      //console.log("reverse thrust set");
     }
+
+    //check for screen collision
+    if (this.PhysicsEntity.position.x > model.screenwidth) this.PhysicsEntity.position.x = -10;
+    if (this.PhysicsEntity.position.x < -11) this.PhysicsEntity.position.x = model.screenwidth - 20;
+    if (this.PhysicsEntity.position.y < -11) this.PhysicsEntity.position.y = model.screenheight - 20;
+    if (this.PhysicsEntity.position.y > model.screenheight) this.PhysicsEntity.position.y = -10;
 
     this.position.x = this.PhysicsEntity.position.x;
     this.position.y = this.PhysicsEntity.position.y;
     this.centerpoint.x = this.position.x + this.size.x / 2;
     this.centerpoint.y = this.position.y + this.size.y / 2;
-
-    //check for screen collision
-    if (this.position.x > model.screenwidth) {
-      this.position.x = -10;
-      this.PhysicsEntity.position.x = -10;
-    }
-    if (this.position.x < -11) {
-      this.position.x = model.screenwidth - 20;
-      this.PhysicsEntity.position.x = model.screenwidth - 20;
-    }
-    if (this.position.y < -11) {
-      this.position.y = model.screenheight - 20;
-      this.PhysicsEntity.position.y = model.screenheight - 20;
-    }
-    if (this.position.y > model.screenheight) {
-      this.position.y = -10;
-      this.PhysicsEntity.position.y = -10;
-    }
 
     /**************************************************
      * inside each state case
@@ -352,12 +342,12 @@ export class Enemy extends GameObject {
 
         //check collision flags
         //if set, AND scanning timer complete, change state
-        if (this.stateTik >= 10 && playerDetected) {
+        if (this.stateTik >= 50 && playerDetected) {
           if (playerDetected) this.enemyState = enemyAIStates.ENGAGING_PLAYER;
           playerDetected = false;
           this.stateTik = 0;
           break;
-        } else if (this.stateTik >= 10 && !playerDetected) {
+        } else if (this.stateTik >= 50 && !playerDetected) {
           //no collisions, and scanning burnoff finished
           this.enemyState = enemyAIStates.PATROLLING;
           playerDetected = false;
@@ -377,33 +367,31 @@ export class Enemy extends GameObject {
             this.patrolState = patrollingStates.IDLE;
             break;
           case attackStates.STOPPNG:
-            console.log("slowing down");
+            //console.log("STOPPING");
             this.patrolState = patrollingStates.IDLE;
-
-            //this.velocity.getMag()
-            while (this.PhysicsEntity.speed > 3) {
-              this.PhysicsEntity.speed -= 1;
-              await this.sleep(25);
+            this.thrust = false;
+            this.reversethrust = false;
+            if (this.PhysicsEntity.speed > 0) {
+              this.slowdown();
+            } else {
+              this.attackState = attackStates.TRACKING;
             }
-            this.PhysicsEntity.speed = 0;
-            this.attackState = attackStates.TRACKING;
 
             break;
           case attackStates.TRACKING:
-            vAttack = this.position.subtract(model.gameObjects[0].position);
-            console.log("TRACKNIG");
-            console.log("this.position", this.position.x, this.position.y);
+            //vAttack = this.position.subtract(model.gameObjects[0].position);
+            vAttack = model.gameObjects[0].position.subtract(this.position);
+            //console.log("TRACKNIG");
+            /*console.log("this.position", this.position.x, this.position.y);
             console.log("player position", model.gameObjects[0].position.x, model.gameObjects[0].position.y);
-            console.log("attack vector", vAttack.x, vAttack.y);
+            console.log("attack vector", vAttack.x, vAttack.y); */
             thetaAttack = vectorAngle(vAttack); //vAttack.getAngle();
             attackAngle = thetaAttack;
-            console.log("new angle: ", thetaAttack);
-
+            //console.log("new angle: ", thetaAttack);
             this.attackState = attackStates.TURNING;
             break;
           case attackStates.TURNING:
             console.log("TURNING");
-
             if (this.PhysicsEntity.orientation != attackAngle) {
               //sanitize this.angle
               if (this.PhysicsEntity.orientation < 0 || this.PhysicsEntity.orientation >= 360) {
@@ -421,24 +409,18 @@ export class Enemy extends GameObject {
                 while (attackAngle < 0) attackAngle += 360;
                 while (attackAngle >= 360) attackAngle -= 360;
               }
-
               const alpha = attackAngle - this.angle;
               const beta = attackAngle - this.angle + 360;
               const gamma = attackAngle - this.angle - 360;
-
               let trackingIndex: number | null = 0;
               const reducerArray = [alpha, beta, gamma];
-
               reducerArray.reduce((accum, current, index) => {
                 if (Math.abs(accum) < Math.abs(current)) return accum;
                 trackingIndex = index;
                 return current;
               });
-
               let turndir = "CW";
-
               if (reducerArray[trackingIndex] < 0) turndir = "CCW";
-
               if (alpha <= 2.6 && alpha >= -2.6) {
                 this.attackState = attackStates.FIRING;
                 this.stateTik = 0;
@@ -458,6 +440,8 @@ export class Enemy extends GameObject {
             break;
 
           case attackStates.FIRING:
+            console.log("FIRING");
+
             if (ammoTimerBurnoffTik < ammoTimerBurnoff) {
               ammoTimerBurnoffTik += 1;
               break;
@@ -468,26 +452,11 @@ export class Enemy extends GameObject {
               sfx.play("enemyfire");
               model.gameObjects.push(new enemyBullet(new Vector(this.position.x, this.position.y), this.angle, this.size));
               this.ammo -= 1;
-              console.log("bullets remaining: ", this.ammo);
-              this.attackState = attackStates.TRACKING;
-              this.enemyState = enemyAIStates.SCANNING;
-            } else {
-              this.attackState = attackStates.TRACKING;
-              this.enemyState = enemyAIStates.SCANNING;
-            }
-            break;
-          case attackStates.MOVING:
-            this.stateTik += 1;
-            console.log("ATTACK NOVE");
-            this.thrust = true;
-            this.travelAngle = this.angle;
-            if (this.stateTik >= 5) {
-              this.stateTik = 0;
-              this.thrust = false;
               this.attackState = attackStates.IDLE;
               this.enemyState = enemyAIStates.SCANNING;
-              vAttack = null;
-              thetaAttack = null;
+            } else {
+              this.attackState = attackStates.IDLE;
+              this.enemyState = enemyAIStates.SCANNING;
             }
             break;
         }
@@ -509,19 +478,19 @@ export class Enemy extends GameObject {
              **********************************************/
             if (enemyPatrolling) this.patrolState = patrollingStates.NAVIGATING;
             let currentQuadrant: number;
-            if (this.position.x >= this.screenw / 2) {
+            if (this.PhysicsEntity.position.x >= this.screenw / 2) {
               //right side
-              if (this.position.y >= this.screenh / 2) currentQuadrant = 4;
+              if (this.PhysicsEntity.position.y >= this.screenh / 2) currentQuadrant = 4;
               else currentQuadrant = 2;
             } else {
               //left side
-              if (this.position.y >= this.screenh / 2) currentQuadrant = 3;
+              if (this.PhysicsEntity.position.y >= this.screenh / 2) currentQuadrant = 3;
               else currentQuadrant = 1;
             }
             const quadrantArray = [1, 2, 3, 4].filter(q => q != currentQuadrant);
             const targetQuadrant = chance.pickone(quadrantArray);
-            console.log("screensize: ", this.screenw, this.screenh);
-            console.log("enemy position: ", this.position.x, this.position.y);
+            //console.log("screensize: ", this.screenw, this.screenh);
+            //console.log("enemy position: ", this.position.x, this.position.y);
             const vectorMap = {
               1: new Vector(0.25 * this.screenw, 0.25 * this.screenh),
               2: new Vector(0.75 * this.screenw, 0.25 * this.screenh),
@@ -531,19 +500,23 @@ export class Enemy extends GameObject {
             const targetVector = vectorMap[targetQuadrant];
             patrolDestination = targetVector;
             const adjustedPosition = this.position.add(new Vector(this.size.x / 2, this.size.y / 2), false);
-            newHeading = adjustedPosition.subtract(targetVector);
-            console.log("new heading", newHeading.x, newHeading.y);
+            //console.log("heading calc: ", adjustedPosition, targetVector);
+
+            //newHeading = adjustedPosition.subtract(targetVector);
+            newHeading = targetVector.subtract(adjustedPosition);
+            //console.log("new heading", newHeading.x, newHeading.y);
             //newAngle = newHeading.getAngle();
             newAngle = vectorAngle(newHeading);
-            console.log("newangle: ", newAngle);
+            //console.log("newangle: ", newAngle);
             this.patrolState = patrollingStates.TURNING;
             enemyPatrolling = true;
-            console.log(
-              `waypoint determined: qaud: ${targetQuadrant} target V: ${targetVector.x}, ${targetVector.y}, new heading/angle: ${newHeading.x},${newHeading.y} /angle: ${newAngle}`
-            );
+            //console.log(
+            //  `waypoint determined: qaud: ${targetQuadrant} target V: ${targetVector.x}, ${targetVector.y}, new heading/angle: ${newHeading.x},${newHeading.y} /angle: ${newAngle}`
+            //);
             break;
 
           case patrollingStates.TURNING:
+            //console.log("in turning routine: ", this.PhysicsEntity.orientation);
             if (this.PhysicsEntity.orientation != attackAngle) {
               //sanitize this.angle
               if (this.PhysicsEntity.orientation < 0 || this.PhysicsEntity.orientation >= 360) {
@@ -556,16 +529,20 @@ export class Enemy extends GameObject {
                   this.angle = this.PhysicsEntity.orientation;
                 }
               }
+
+              //console.log("sanitized: ", this.PhysicsEntity.orientation);
               //sanitize attackAngle
-              if (attackAngle < 0 || attackAngle >= 360) {
-                while (attackAngle < 0) attackAngle += 360;
-                while (attackAngle >= 360) attackAngle -= 360;
+              if (newAngle < 0 || newAngle >= 360) {
+                while (newAngle < 0) newAngle += 360;
+                while (newAngle >= 360) newAngle -= 360;
               }
-              console.log("in turning: new angle/this.angle: ", newAngle, this.angle);
+              // console.log("sanitized new angle: ", newAngle);
+
+              //console.log("in turning: new angle/this.angle: ", newAngle, this.angle);
               const alpha = newAngle - this.angle;
               const beta = newAngle - this.angle + 360;
               const gamma = newAngle - this.angle - 360;
-
+              // console.log("direction calcs", alpha, beta, gamma);
               let trackingIndex: number | null = 0;
               const reducerArray = [alpha, beta, gamma];
 
@@ -576,9 +553,9 @@ export class Enemy extends GameObject {
               });
 
               let turndir = "CW";
-              console.log("turnings : ", turndir);
+              //console.log("turnings : ", turndir);
               if (reducerArray[trackingIndex] < 0) turndir = "CCW";
-              console.log(alpha);
+              //console.log(alpha);
               if (alpha <= 2.6 && alpha >= -2.6) {
                 this.patrolState = patrollingStates.MOVING;
                 this.stateTik = 0;
@@ -603,11 +580,11 @@ export class Enemy extends GameObject {
               this.stateTik = 0;
               this.patrolState = patrollingStates.WAYPOINT;
             }
-            console.log("MOVING");
+            // console.log("MOVING");
             this.thrust = true;
             this.travelAngle = this.angle;
 
-            if (vectorMag(this.velocity) >= MAX_PLAYER_SPEED) {
+            if (this.PhysicsEntity.speed >= 80) {
               this.patrolState = patrollingStates.NAVIGATING;
               this.thrust = false;
               this.stateTik = 0;
@@ -617,35 +594,34 @@ export class Enemy extends GameObject {
           case patrollingStates.NAVIGATING:
             this.stateTik += 1;
 
-            if (this.stateTik >= 3) {
-              console.log("scanning");
+            if (this.stateTik >= 15) {
+              //console.log("scanning");
               this.scanField();
               this.stateTik = 0;
               break;
             }
 
-            console.log("navigating");
+            // console.log("NAVIGATING");
             this.thrust = false;
             this.travelAngle = this.angle;
             //get distance to quadrant
-            const distance = vectorDistance(this.position, patrolDestination); //this.position.getDistance(patrolDestination);
-
-            console.log("distance remaining ", distance);
-            model.distanceToDest = distance.toFixed(2).toString();
-            console.log("speed", vectorMag(this.velocity).toFixed(2)); // this.velocity.getMag()
-            console.log("velocity vector", this.velocity.x, this.velocity.y);
-            if (distance < 80) this.patrolState = patrollingStates.STOPPING;
+            const distance = vectorDistance(this.position, patrolDestination);
+            //console.log("distance remaining ", distance);
+            if (distance < 100) this.patrolState = patrollingStates.STOPPING;
             break;
           case patrollingStates.STOPPING:
-            console.log("slowing down");
-            this.patrolState = patrollingStates.IDLE;
-            //this.velocity.getMag()
-            while (this.PhysicsEntity.speed > 3) {
-              this.PhysicsEntity.speed -= 1;
-              await this.sleep(25);
+            //console.log("slowing down");
+            this.thrust = false;
+            this.reversethrust = false;
+
+            if (this.PhysicsEntity.speed > 0) {
+              this.slowdown();
+              /* this.PhysicsEntity.speed -= 1;
+              await this.sleep(100); */
+            } else {
+              this.patrolState = patrollingStates.IDLE;
             }
-            this.PhysicsEntity.speed = 0;
-            this.patrolState = patrollingStates.IDLE;
+
             break;
         }
 
@@ -653,6 +629,21 @@ export class Enemy extends GameObject {
       default:
         break;
     }
+  }
+  slowdown() {
+    const currentAngle = this.PhysicsEntity.orientation;
+    let reverseAngle = currentAngle + 180;
+
+    const tempX = Math.cos(this.angle2rad(reverseAngle));
+    const tempY = Math.sin(this.angle2rad(reverseAngle));
+    const dir = new Vector(tempX, tempY);
+
+    this.PhysicsEntity.addForce({
+      name: "reverse",
+      direction: dir,
+      duration: 0,
+      magnitude: 0.1,
+    });
   }
 }
 
@@ -664,7 +655,7 @@ export class enemyBullet extends GameObject {
   radius: number;
   centerpoint = new Vector(0, 0);
   halfsize = new Vector(0, 0);
-  mass: number = 0;
+  mass: number = 0.000001;
 
   constructor(location: Vector, angle: number, shipsize: Vector) {
     super("badbullet");
@@ -680,24 +671,22 @@ export class enemyBullet extends GameObject {
     this.angle = angle;
     this.ssPosition = "0px 0px";
     this.textureSize = "contain";
-    this.position = location;
-    this.position.x += shipsize.x / 2;
-    const anglex = (shipsize.x / 2) * Math.cos(this.ang2Rad(this.angle));
-    this.position.x += anglex;
-    const angley = (shipsize.y / 2) * Math.sin(this.ang2Rad(-this.angle));
-    this.position.y += shipsize.y / 2;
-    this.position.y += angley;
+    let cpX = location.x + shipsize.x / 2;
+    let cpY = location.y + shipsize.y / 2;
+    let offset = shipsize.x / 2;
+    let sx = offset * Math.cos(angle2rad(this.angle));
+    let sy = offset * Math.sin(angle2rad(this.angle));
 
-    //this.velocity.setPolar(6.5, this.angle);
-    vectorSetPolar(this.velocity, 9, this.angle);
+    this.position = new Vector(cpX + sx - this.halfsize.x, cpY + sy - this.halfsize.y);
+    vectorSetPolar(this.velocity, 1, this.angle);
 
     //**************************** */
     //PEASY PHYSICS
     //**************************** */
 
-    this.shape = new Rect(new Vector(0, 0), this.size, 90);
+    //this.shape = new Rect(new Vector(0, 0), this.size, 90);
     this.entity = new Entity(this.position);
-    this.entity.shapes = [this.shape];
+    this.entity.shapes = [{ position: new Vector(0, 0), size: this.size, types: ["enemybullet"] }];
     this.entity.forces = [];
     this.entity.maxSpeed = 800;
     this.entity.color = "darkgreen";
@@ -713,9 +702,19 @@ export class enemyBullet extends GameObject {
     });
     this.PhysicsEntity.mass = this.mass;
     this.PhysicsEntity.entity = this;
+    this.PhysicsEntity.colliding = (entity, intersection): CollidingResolution => {
+      if ((entity.entity as GameObject).type != "ENEMY") {
+        const removeIndex = model.gameObjects.findIndex(ent => {
+          return ent.id == this.id;
+        });
+        if (removeIndex != -1) model.gameObjects.splice(removeIndex, 1);
+        return "remove";
+      }
+    };
   }
 
   destroy() {
+    this.PhysicsEntity.deleted = true;
     Physics.removeEntities([this.PhysicsEntity]);
     const removeIndex = model.gameObjects.findIndex(ent => {
       return ent.id == this.id;
