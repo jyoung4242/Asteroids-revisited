@@ -46,6 +46,9 @@ body {
 .content {
   transition: opacity 1.75s ease-in-out;
   color: white;
+  position: relative;
+  width: 100%;
+  height: 100%;
 }
 
 .content.pui-adding {
@@ -71,7 +74,7 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   color: darkgray;
   position: absolute;
-  top: 20%;
+  top: 25%;
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
@@ -99,26 +102,32 @@ body {
 }
 
 .PLAYER {
-  position: fixed;
-  border-radius: 50%;
-  transform: rotate(-90deg);
+  position: absolute;
   transform-origin: center;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
 
 .ENEMY {
-  position: fixed;
-  border-radius: 50%;
-  transform: rotate(-90deg);
+  position: absolute;
   transform-origin: center;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
 
 .BADBULLET {
-  position: fixed;
-  transform: rotate(-90deg);
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  transform-origin: center;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.BULLET {
+  position: absolute;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -132,27 +141,15 @@ body {
   width: 100%;
   height: 100%;
   background-repeat: no-repeat;
+  background-size: cover;
   transform-origin: center;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
 
 .ASTEROID {
-  position: fixed;
+  position: absolute;
   /* border: 1px silver solid; */
-  transform-origin: center;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-}
-
-.BULLET {
-  position: fixed;
-  /*  border: 1px silver solid; */
-  transform: rotate(-90deg);
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: flex-start;
   transform-origin: center;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
@@ -176,7 +173,7 @@ body {
   opacity: 0.75;
   border: 1px solid white;
   rotate: -35deg;
-  z-index: 6;
+  z-index: 10;
 }
 .navRel {
   position: relative;
@@ -193,6 +190,7 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  z-index: 8;
 }
 .turnleft {
   position: absolute;
@@ -241,6 +239,7 @@ body {
   border-radius: 50%;
   box-shadow: 0px 0px 4px 4px white;
   opacity: 0.75;
+  z-index: 10;
 }
 
 .but_rel {
@@ -253,6 +252,13 @@ body {
 }
 
 /* HUD styling*/
+.HUD {
+  top: 0;
+  left: 0;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
 
 .HUD_Health {
   opacity: 0.6;
@@ -506,11 +512,17 @@ canvas {
   transform: translateX(-50%);
   top: 0;
   margin-top: 10px;
-  width: 5%;
-  height: 5%;
+  width: 100px;
+  height: 35px;
   display: flex;
   justify-content: start;
   align-items: center;
+  transition: opacity 0.4s ease-in-out;
+  opacity: 1;
+}
+
+.touchtoggle.pui-removing {
+  opacity: 0;
 }
 
 .togglebutton {
@@ -527,8 +539,8 @@ canvas {
 
 .toggleLabel {
   position: absolute;
-  top: 20px;
+  top: 50px;
   left: 50%;
-  transform: translateX(-135%);
+  transform: translateX(-50%);
   font-size: xx-small;
 }

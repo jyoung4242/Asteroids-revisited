@@ -1,5 +1,5 @@
 import { GameState, State } from "./gameState";
-import { GameStates, bgm, sfx, DeviceType } from "..";
+import { GameStates, bgm, sfx, DeviceType, resizeScreen } from "..";
 import { Input } from "@peasy-lib/peasy-input";
 
 export class MenuState extends State {
@@ -10,8 +10,8 @@ export class MenuState extends State {
   controller = new AbortController();
   static template = `
   <div class="content menu" \${===isMenu}>
-    <span class="toggleLabel" >ENABLE TOUCHCONTROLS</span>
-    <div class="touchtoggle">
+    <span class="toggleLabel" \${!== mobiletoggle}>ENABLE TOUCHCONTROLS</span>
+    <div class="touchtoggle" \${!== mobiletoggle}>
       <div id="touchtoggle" class="togglebutton"></div>
     </div>
     <span class="title" style="font-size: \${css.TitleFontSize};">ASTEROIDS PLUS 2.0</span>  
@@ -39,48 +39,74 @@ export class MenuState extends State {
     const [model] = params;
     this.model = model;
     model.gamestate = GameStates.MENU;
-
-    if (model.isMobile) {
-      this.touchHandler = document.addEventListener("touchstart", e => this.transition_menu(model), {
-        signal: this.controller.signal,
-      });
-    } else {
-      this.mapping = Input.map(
-        {
-          Enter: { action: "start", repeat: false },
-        },
-        (action: string, doing: boolean) => {
-          if (doing) {
-            switch (action) {
-              case "start":
-                GameState.set("game", "default", model);
-                break;
-            }
-          } else {
-          }
-        }
-      );
-    }
-    /* setTimeout(() => {
-      this.toggle = document.getElementById("touchtoggle");
-      this.toggle.addEventListener("click", () => {
-        model.mobiletoggle = !model.mobiletoggle;
-
-        const parent = this.toggle.parentElement;
-        if (model.mobiletoggle) {
-          parent.style.justifyContent = "end";
+    this.wait(250);
+    setTimeout(() => {
+      console.log("toggle init");
+      let toggle = document.getElementById("touchtoggle");
+      toggle.addEventListener("click", () => {
+        console.log("toggle click");
+        if (!model.mobiletoggle) {
+          //clear out input.mapping
+          if (this.mapping) this.mapping.unmap();
+          this.mapping = undefined;
+          //set device type
           model.deviceType = DeviceType.IOS;
-          if (!this.touchHandler)
-            this.touchHandler = document.addEventListener("touchstart", e => this.transition_menu(model), {
-              signal: this.controller.signal,
-            });
+
+          //setup touchhandler for menu
+          this.touchHandler = document.addEventListener("touchstart", e => this.transition_menu(model), {
+            signal: this.controller.signal,
+          });
         } else {
-          parent.style.justifyContent = "start";
+          //clear out touch handler
+          console.log("killing touch handler");
+          this.controller.abort();
+
+          //set device type
+          console.log("setting device type");
           model.deviceType = DeviceType.DESKTOP;
-          if (this.touchHandler) this.controller.abort();
+
+          //map keyboard
+          console.log("settup keyboard mapping");
+          this.mapping = Input.map(
+            {
+              Enter: { action: "start", repeat: false },
+            },
+            (action: string, doing: boolean) => {
+              if (doing) {
+                switch (action) {
+                  case "start":
+                    GameState.set("game", "default", model);
+                    break;
+                }
+              } else {
+              }
+            }
+          );
         }
+        model.mobiletoggle = !model.mobiletoggle;
+        resizeScreen();
       });
-    }, 250); */
+    }, 50);
+
+    model.deviceType = DeviceType.DESKTOP;
+
+    //map keyboard
+    console.log("settup keyboard mapping");
+    this.mapping = Input.map(
+      {
+        Enter: { action: "start", repeat: false },
+      },
+      (action: string, doing: boolean) => {
+        if (doing) {
+          switch (action) {
+            case "start":
+              GameState.set("game", "default", model);
+              break;
+          }
+        } else {
+        }
+      }
+    );
   }
 
   public async exit(_next: State, ...params: any) {
@@ -88,13 +114,7 @@ export class MenuState extends State {
     const [model] = params;
     if (this.mapping) this.mapping.unmap();
     model.gamestate = "transition";
-    if (model.isMobile) {
-      this.controller.abort();
-    }
-    if (this.touchHandler) {
-      this.controller.abort();
-    }
-
+    this.controller.abort();
     //mockup timer to change states
     await this.wait(2000);
   }

@@ -1,10 +1,19 @@
 import { GameState, State } from "./gameState";
-import { Player, Asteroid } from "../lib/ecs";
+import { Player, Asteroid, angle2rad } from "../lib/ecs";
 import { model, GameStates, bgm, sfx } from "..";
 import { Input } from "@peasy-lib/peasy-input";
-import { Physics } from "@peasy-lib/peasy-physics";
+import { Physics, Vector, Stadium, Circle, Entity as PhysicsEntity, Intersection } from "@peasy-lib/peasy-physics";
 import { Enemy } from "../lib/AI";
+import { mode } from "../../webpack.config";
 //import { Lighting, Vector, Light } from "@peasy-lib/peasy-lighting";
+
+//testing switches
+const TEST_NO_ASTEROIDS = false;
+const TEST_NO_AI = false;
+const TEST_NO_PLAYER = false;
+const TEST_NO_HUD = false;
+const TEST_AI_SPAWN_LEVEL = 5;
+const TEST_AI_SPAWN_RATE = null;
 
 // Load Chance
 let Chance = require("chance");
@@ -22,12 +31,25 @@ export enum HUDparameters {
 //Level progression and spawn rate
 let spawnRate = 7.5;
 let spawnTimer = 0;
-let enemySpawnRate = 30;
+let enemySpawnRate = chance.integer({ min: 30, max: 50 });
 let enemySpawnTimer = 0;
 let enemySpawnedFlag: boolean = false;
+let peasyLoadedFlag: boolean = false;
+
+let UIToggle = false;
+
+export const gameObjects = [];
 
 export const clearEnemySpawnFlag = () => {
   enemySpawnedFlag = false;
+};
+
+export const stopeEngine = () => {
+  model.engineRunning = false;
+};
+
+export const startEngine = () => {
+  model.engineRunning = true;
 };
 
 export const updateHudData = (param: HUDparameters, incValue: number) => {
@@ -36,15 +58,15 @@ export const updateHudData = (param: HUDparameters, incValue: number) => {
       model.score += incValue;
       break;
     case HUDparameters.EXPERIENCE:
-      if (model.entities[0].exp >= 100) {
-        model.entities[0].exp = 0;
+      if (model.gameObjects[0].exp >= 100) {
+        model.gameObjects[0].exp = 0;
         model.gameLevel += 1;
         spawnRate *= 0.95;
         enemySpawnRate * +0.95;
-        model.entities[0].health = 10;
+        model.gameObjects[0].health = 10;
         model.health = 10;
       }
-      model.exp = `${model.entities[0].exp}%`;
+      model.exp = `${model.gameObjects[0].exp}%`;
 
       break;
     case HUDparameters.LIVES:
@@ -68,14 +90,13 @@ export class PlayState extends State {
   lastPhysicsUpdate: number = 0;
   lastRenderUpdate: number = 0;
   static running: boolean = false;
-  entities = [];
   mapping: any = undefined;
   firelatch: boolean = false;
 
   static template = `
   <div class="content" \${===isGame}>
-      
-    <div>
+  <canvas \${ ==> canvas}></canvas>
+    <div class="HUD" \${===hud.display}>
       <div class="HUD_Health \${mobileCSSstring}">
         <span class="HUD_Health_title">HEALTH</span>
         <div class="healthflex">
@@ -99,7 +120,7 @@ export class PlayState extends State {
         </div>    
           
       </div>
-      <div>
+      <div class="HUD">
         <div class="LivesSection" style="font-size: \${css.HUDfontSize};">
           Lives: 
           <div class="livesIcon" style="width: \${css.livesIconWidth}" \${===lives1}></div>
@@ -127,8 +148,8 @@ export class PlayState extends State {
 
     </div>
     
-    <div class="\${entity.type}" \${entity<=*entities:id} style="top: \${entity.position.y}px; left: \${entity.position.x}px; width: \${entity.size.x}px; height: \${entity.size.y}px; transform: scale(\${entity.mobileScaling}) ">
-      <div class="inner" style="rotate: \${entity.angle}deg; background-image:url(\${entity.texture});background-position: \${entity.ssPosition};background-size:\${entity.textureSize};">
+    <div class="\${gameObject.type}" \${gameObject<=*gameObjects:id} style="width: \${gameObject.size.x}px; height: \${gameObject.size.y}px; top: -\${gameObject.halfsize.y}px; left: -\${gameObject.halfsize.x}px; transform: translate(\${gameObject.position.x}px, \${gameObject.position.y}px) rotate(-90deg) scale(\${gameObject.mobileScaling});">
+      <div class="inner" style="rotate: \${gameObject.angle}deg; background-image:url(\${gameObject.texture});background-position: \${gameObject.ssPosition};background-size:\${gameObject.textureSize};">
       </div>
     </div>
 
@@ -144,10 +165,11 @@ export class PlayState extends State {
     <div class="buttonDiv" \${===isMobile} style="width: \${css.fireButtonWidth}; right: \${css.fireButtonRight}; bottom: \${css.navButtonBottom}">
         <div class="but_rel" \${pointerdown@=>fire} \${pointerup@=>stopfiring}></div>
     </div>
-  </div>`;
-
-  //  <span class="diag">FPS: \${fps}  Enemy State: \${enemystate} Patrol State: \${patrolstate} Attack State: \${attackstate} Evade State: \${evadestate} E speeed: \${espeed}  distance: \${distanceToDest} gap: \${gap} e Angle: \${enemyAngle} t angle: \${targetAngle}</span>
-
+    
+  </div>
+ 
+  `;
+  //
   constructor() {
     super("game");
   }
@@ -155,14 +177,47 @@ export class PlayState extends State {
   public enter(_previous: State, ...params: any): void {
     const [model] = params;
     model.gamestate = GameStates.GAME;
-
+    model.hud.display = !TEST_NO_HUD;
     //*****************************
     //Set up game entities
     model.entities = [];
     model.lives = 3;
     model.gameLevel = 1;
     model.score = 0;
-    model.entities.push(new Player(model.screenwidth, model.screenheight));
+
+    //Peasy Migration
+    //  Initialize physics engine
+    //  create shapes
+    //  define entities
+    //  add entities
+    //  remove entities
+    //  update forces
+    //  manage collisions
+
+    /**
+     * PEASY PHYSICS INIT
+     */
+    setTimeout(() => {
+      //{ ctx: model.canvas.getContext("2d"), showAreas: true }
+      Physics.initialize({
+        ctx: model.canvas.getContext("2d"),
+        showAreas: true,
+        collisions: {
+          player: ["asteroid", "enemybullet"],
+          asteroid: ["asteroid", "bullet", "enemybullet"],
+          enemy: ["player", "bullet", "asteroid"],
+          bullet: ["enemy", "asteroid"],
+          enemybullet: ["player", "asteroid"],
+        },
+      });
+
+      if (!TEST_NO_PLAYER) model.gameObjects.push(new Player(model.screenwidth, model.screenheight, Physics));
+      peasyLoadedFlag = true;
+      model.canvas.setAttribute("width", window.innerWidth.toString());
+      model.canvas.setAttribute("height", window.innerHeight.toString());
+      model.canvas.style.display = "none";
+      UIToggle = false;
+    }, 25);
 
     this.mapping = Input.map(
       {
@@ -177,6 +232,7 @@ export class PlayState extends State {
         Enter: { action: "fire", repeat: false },
         Shift: { action: "fire", repeat: false },
         Escape: { action: "pause", repeat: false },
+        "=": { action: "UI", repeat: false },
       },
       (action: string, doing: boolean) => {
         if (doing) {
@@ -196,9 +252,24 @@ export class PlayState extends State {
             case "fire":
               model.keypresses.fire = "FIRE";
               break;
+            case "UI":
+              if (UIToggle) {
+                model.canvas.style.display = "none";
+                UIToggle = false;
+              } else {
+                UIToggle = true;
+                model.canvas.style.display = "block";
+              }
+
+              break;
             case "pause":
-              if (PlayState.running == true) this.stopEngine();
-              else this.startEngine();
+              if (model.engineRunning == true) {
+                bgm.stop();
+                model.engineRunning = false;
+              } else {
+                bgm.play();
+                model.engineRunning = true;
+              }
             default:
               model.keypresses.direction = "NONE";
               model.keypresses.fire = "NONE";
@@ -224,7 +295,6 @@ export class PlayState extends State {
   }
 
   public async exit(_next: State, ...params: any) {
-    console.log("exiting game");
     PlayState.running = false;
     const [model] = params;
     model.gamestate = "transition";
@@ -251,76 +321,88 @@ export class PlayState extends State {
   };
 
   FixedStepEngine = (timestamp: number) => {
-    if (this.startime == undefined) {
-      this.startime = timestamp;
-      this.lasttime = timestamp;
-    }
-    let deltaTime = (timestamp - this.lasttime) / 1000;
-    if (deltaTime > 1.5) {
-      deltaTime = 0;
-      this.lasttime = timestamp;
-    }
-
-    model.fps = (1 / deltaTime).toFixed(2);
-    this.lasttime = timestamp;
-    this.lastPhysicsUpdate += deltaTime;
-    this.lastRenderUpdate += deltaTime;
-    spawnTimer += deltaTime;
-    if (model.gameLevel >= 1 && !enemySpawnedFlag) {
-      enemySpawnTimer += deltaTime;
-    }
-
-    //check for input
-    if (model.isMobile && model.entities[0]) {
-      if (model.navStatus == "LEFT") model.entities[0].turnLeft();
-      if (model.navStatus == "RIGHT") model.entities[0].turnRight();
-      if (model.navStatus == "THRUST") model.entities[0].accelerate();
-      if (model.navStatus == "RTHRUST") model.entities[0].reverse();
-      if (model.navStatus == "NONE") model.entities[0].decelerate();
-
-      if (model.button.status == "pressed" && !this.firelatch) {
-        model.entities[0].fire();
-        this.firelatch = true;
-      } else if (model.button.status == "released" && this.firelatch) {
-        this.firelatch = false;
+    if (model.engineRunning) {
+      if (this.startime == undefined) {
+        this.startime = timestamp;
+        this.lasttime = timestamp;
       }
-    } else if (!model.isMobile && model.entities[0]) {
-      //keyboard input
-      if (model.keypresses.direction == "LEFT") model.entities[0].turnLeft();
-      if (model.keypresses.direction == "RIGHT") model.entities[0].turnRight();
-      if (model.keypresses.direction == "UP") model.entities[0].accelerate();
-      if (model.keypresses.direction == "DOWN") model.entities[0].reverse();
-      if (model.keypresses.direction == "NONE") model.entities[0].decelerate();
+      let deltaTime = (timestamp - this.lasttime) / 1000;
+      if (deltaTime > 1.5) {
+        deltaTime = 0;
+        this.lasttime = timestamp;
+      }
 
-      if (model.keypresses.fire == "FIRE" && !this.firelatch) {
-        model.entities[0].fire();
-        this.firelatch = true;
-      } else if (model.keypresses.fire == "NONE" && this.firelatch) {
-        this.firelatch = false;
+      model.fps = (1 / deltaTime).toFixed(2);
+      this.lasttime = timestamp;
+      this.lastPhysicsUpdate += deltaTime;
+      this.lastRenderUpdate += deltaTime;
+      spawnTimer += deltaTime;
+
+      if (model.gameLevel >= TEST_AI_SPAWN_LEVEL && !enemySpawnedFlag) {
+        enemySpawnTimer += deltaTime;
+      }
+
+      //check for input
+      if (model.isMobile && model.gameObjects[0]) {
+        if (model.navStatus == "LEFT") model.gameObjects[0].turnLeft();
+        if (model.navStatus == "RIGHT") model.gameObjects[0].turnRight();
+        if (model.navStatus == "THRUST") model.gameObjects[0].accelerate();
+        if (model.navStatus == "RTHRUST") model.gameObjects[0].reverse();
+        //if (model.navStatus == "NONE") model.gameObjects[0].decelerate();
+
+        if (model.button.status == "pressed" && !this.firelatch) {
+          model.gameObjects[0].fire();
+          this.firelatch = true;
+        } else if (model.button.status == "released" && this.firelatch) {
+          this.firelatch = false;
+        }
+      } else if (!model.isMobile && model.gameObjects[0]) {
+        //keyboard input
+        if (model.keypresses.direction == "LEFT") model.gameObjects[0].turnLeft();
+        if (model.keypresses.direction == "RIGHT") model.gameObjects[0].turnRight();
+        if (model.keypresses.direction == "UP") model.gameObjects[0].accelerate();
+        if (model.keypresses.direction == "DOWN") model.gameObjects[0].reverse();
+        //if (model.keypresses.direction == "NONE") model.gameObjects[0].nothrust();
+
+        if (model.keypresses.fire == "FIRE" && !this.firelatch) {
+          model.gameObjects[0].fire();
+          this.firelatch = true;
+        } else if (model.keypresses.fire == "NONE" && this.firelatch) {
+          this.firelatch = false;
+        }
+      }
+
+      //generate new Asteroid
+      if (spawnTimer >= spawnRate && !TEST_NO_ASTEROIDS) {
+        spawnTimer = 0;
+        Asteroid.spawn(Physics);
+      }
+
+      //generate new Enemy
+      if (TEST_AI_SPAWN_RATE == null) {
+        if (enemySpawnTimer >= enemySpawnRate && !TEST_NO_AI) {
+          enemySpawnTimer = 0;
+          enemySpawnedFlag = true;
+          Enemy.spawn(Physics);
+        }
+      } else {
+        if (enemySpawnTimer >= TEST_AI_SPAWN_RATE && !TEST_NO_AI) {
+          enemySpawnTimer = 0;
+          enemySpawnedFlag = true;
+          Enemy.spawn(Physics);
+        }
+      }
+
+      while (this.lastPhysicsUpdate >= physicsInterval) {
+        //update physics here
+        if (peasyLoadedFlag) Physics.update(this.lastPhysicsUpdate, timestamp);
+        model.gameObjects.forEach(ent => {
+          ent.update(this.lastPhysicsUpdate, this);
+        });
+        this.lastPhysicsUpdate -= physicsInterval;
       }
     }
 
-    //generate new Asteroid
-    if (spawnTimer >= spawnRate) {
-      spawnTimer = 0;
-      Asteroid.spawn();
-    }
-
-    //generate new Enemy
-    if (enemySpawnTimer >= enemySpawnRate) {
-      enemySpawnTimer = 0;
-      enemySpawnedFlag = true;
-      Enemy.spawn();
-    }
-
-    while (this.lastPhysicsUpdate >= physicsInterval) {
-      //update physics here
-      model.entities.forEach(ent => {
-        ent.update(this.lastPhysicsUpdate, this);
-      });
-      this.lastPhysicsUpdate -= physicsInterval;
-    }
-
-    if (PlayState.running) requestAnimationFrame(this.FixedStepEngine);
+    requestAnimationFrame(this.FixedStepEngine);
   };
 }
