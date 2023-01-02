@@ -544,3 +544,13 @@ canvas {
   transform: translateX(-50%);
   font-size: xx-small;
 }
+
+.instructions {
+  position: absolute;
+  top: 90%;
+  left: 50%;
+  width: 100%;
+  text-align: center;
+  transform: translateX(-50%);
+  font-size: x-small;
+}

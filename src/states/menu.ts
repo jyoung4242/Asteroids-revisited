@@ -17,6 +17,7 @@ export class MenuState extends State {
     <span class="title" style="font-size: \${css.TitleFontSize};">ASTEROIDS PLUS 2.0</span>  
     <span class="deskopStart" \${!==isMobile}>PRESS ENTER KEY TO BEGIN</span>
     <span class="mobileStart" \${===isMobile}>TAP SCREEN TO BEGIN</span>
+    <span class="instructions" \${!==mobiletoggle}>W / S / Up / Down for thrust, A / D / Left / Right to rotate, Enter / L Shift to fire</span>
    </div>
   `;
   constructor() {
