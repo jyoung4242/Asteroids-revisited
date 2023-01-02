@@ -5,7 +5,6 @@ import { Input } from "@peasy-lib/peasy-input";
 import { Physics, Vector, Stadium, Circle, Entity as PhysicsEntity, Intersection } from "@peasy-lib/peasy-physics";
 import { Enemy } from "../lib/AI";
 import { mode } from "../../webpack.config";
-//import { Lighting, Vector, Light } from "@peasy-lib/peasy-lighting";
 
 //testing switches
 const TEST_NO_ASTEROIDS = false;
