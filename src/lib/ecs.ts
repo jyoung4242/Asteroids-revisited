@@ -565,9 +565,8 @@ export class Asteroid extends GameObject {
     this.entity.forces = [];
     this.entity.maxSpeed = 500;
     this.entity.color = "red";
-    console.log(this.entity);
+
     this.PhysicsEntity = Physics.addEntities([this.entity])[0];
-    console.log(this.PhysicsEntity);
     this.PhysicsEntity.addForce({
       name: "initial",
       direction: this.velocity,
