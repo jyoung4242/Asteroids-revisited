@@ -32,7 +32,6 @@ module.exports = {
   resolve: {
     extensions: [".tsx", ".ts", ".js"],
   },
-  devtool: "inline-source-map",
   plugins: [
     new HtmlWebpackPlugin({
       template: path.resolve(__dirname, "./src/template.html"),
