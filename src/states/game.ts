@@ -1,10 +1,10 @@
 import { GameState, State } from "./gameState";
-import { Player, Asteroid, angle2rad } from "../lib/ecs";
+import { Player, Asteroid, angle2rad, Star } from "../lib/ecs";
 import { model, GameStates, bgm, sfx } from "..";
 import { Input } from "@peasy-lib/peasy-input";
-import { Physics, Vector, Stadium, Circle, Entity as PhysicsEntity, Intersection } from "@peasy-lib/peasy-physics";
+import { Physics } from "@peasy-lib/peasy-physics";
 import { Enemy } from "../lib/AI";
-import { mode } from "../../webpack.config";
+import { Light, Lighting, Viewport } from "@peasy-lib/peasy-lighting";
 
 //testing switches
 const TEST_NO_ASTEROIDS = false;
@@ -43,7 +43,7 @@ export const clearEnemySpawnFlag = () => {
   enemySpawnedFlag = false;
 };
 
-export const stopeEngine = () => {
+export const stopEngine = () => {
   model.engineRunning = false;
 };
 
@@ -91,6 +91,7 @@ export class PlayState extends State {
   static running: boolean = false;
   mapping: any = undefined;
   firelatch: boolean = false;
+  star: Star;
 
   static template = `
   <div class="content" \${===isGame}>
@@ -174,6 +175,7 @@ export class PlayState extends State {
   }
 
   public enter(_previous: State, ...params: any): void {
+    let viewport: HTMLElement;
     const [model] = params;
     model.gamestate = GameStates.GAME;
     model.hud.display = !TEST_NO_HUD;
@@ -183,15 +185,6 @@ export class PlayState extends State {
     model.lives = 3;
     model.gameLevel = 1;
     model.score = 0;
-
-    //Peasy Migration
-    //  Initialize physics engine
-    //  create shapes
-    //  define entities
-    //  add entities
-    //  remove entities
-    //  update forces
-    //  manage collisions
 
     /**
      * PEASY PHYSICS INIT
@@ -210,7 +203,19 @@ export class PlayState extends State {
         },
       });
 
-      if (!TEST_NO_PLAYER) model.gameObjects.push(new Player(model.screenwidth, model.screenheight, Physics));
+      /**
+       * PEASY LIGHTING
+       */
+
+      let viewport = Viewport.create({
+        element: document.querySelector(".content"),
+        useMask: true,
+      });
+      const lights = [] as Light[];
+      Lighting.initialize(document.body);
+
+      if (!TEST_NO_PLAYER) model.gameObjects.push(new Player(model.screenwidth, model.screenheight, Physics, Lighting));
+      this.star = new Star(model.screenwidth, model.screenheight, lights, viewport);
       peasyLoadedFlag = true;
       model.canvas.setAttribute("width", window.innerWidth.toString());
       model.canvas.setAttribute("height", window.innerHeight.toString());
@@ -398,6 +403,8 @@ export class PlayState extends State {
         model.gameObjects.forEach(ent => {
           ent.update(this.lastPhysicsUpdate, this);
         });
+        if (this.star) this.star.update();
+        Lighting.update();
         this.lastPhysicsUpdate -= physicsInterval;
       }
     }

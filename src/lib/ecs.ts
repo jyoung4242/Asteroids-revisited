@@ -4,25 +4,24 @@ import {
   Physics,
   Vector,
   Stadium,
-  Circle,
-  Rect,
   Entity as PhysicsEntity,
   Intersection,
   CollidingResolution,
 } from "@peasy-lib/peasy-physics";
+import { Lighting, Light, Viewport, Vector as VectorLight } from "@peasy-lib/peasy-lighting";
 
 import plr from "../assets/images/player1.png";
 import asteroid from "../assets/images/asteroid.png";
 import bolt from "../assets/images/playerbullet.png";
+import shipNormal from "../assets/images/ship-normal-map2.png";
+import astNormal from "../assets/images/asteroid2-normal-map.png";
 
-import { HUDparameters, updateHudData, resetGame, clearEnemySpawnFlag, stopeEngine, startEngine } from "../states/game";
+import { HUDparameters, updateHudData, resetGame, clearEnemySpawnFlag, stopEngine, startEngine } from "../states/game";
 
 // Load Chance
 let Chance = require("chance");
 // Instantiate Chance so it can be used
 let chance = new Chance();
-const MAX_PLAYER_SPEED = 650;
-const MAX_PLAYER_SPEED_MOBILE = 325;
 export const DESKTOP_SCALING = "1";
 const THRUSTFORCE = 25;
 
@@ -166,8 +165,9 @@ export class Player extends GameObject {
   shape: Stadium;
   entity: any;
   gameLoop: any;
+  lightingEntity: any;
 
-  constructor(screenw: number, screenh: number, engine: Physics) {
+  constructor(screenw: number, screenh: number, engine: Physics, LightingRef: any) {
     super("player");
     this.type = "PLAYER";
     this.health = 10;
@@ -180,6 +180,7 @@ export class Player extends GameObject {
     this.radius;
     this.screenh = screenh;
     this.screenw = screenw;
+
     //this.gameLoop = loop;
 
     if (model.isMobile) this.mobileScaling = "0.6";
@@ -195,6 +196,16 @@ export class Player extends GameObject {
     this.invincibleTimer = 0;
     this.ammo = 25;
 
+    //**************************** */
+    //PEASY Lighting
+    //**************************** */
+    this.lightingEntity = LightingRef.addEntities([
+      {
+        entity: this,
+        id: this.id,
+        normalMap: shipNormal,
+      },
+    ]);
     //**************************** */
     //PEASY PHYSICS
     //**************************** */
@@ -223,7 +234,7 @@ export class Player extends GameObject {
           //die and reduce lives, and refresh .entities
           sfx.play("astBoom");
           this.ammo = 25;
-          model.gameObjects = [model.gameObjects[0]];
+          model.gameObjects = [model.gameObjects[0]]; //leave player and star
           const entitiesToRemove = Physics.entities.filter((_ent, index) => {
             return index != 0;
           });
@@ -271,15 +282,15 @@ export class Player extends GameObject {
           clearEnemySpawnFlag();
           model.gameObjects = [model.gameObjects[0]];
           let tempSize;
-          //this.gameLoop.stopEngine();
-          stopeEngine();
+
+          stopEngine();
           this.ammo = 25;
           if (this.screenw <= this.screenh) tempSize = this.screenw / 13;
           else tempSize = this.screenh / 13;
-          //this.position.setCoord(this.screenw / 2 - tempSize / 2, this.screenh / 2 - tempSize / 2);
+
           this.position.x = this.screenw / 2 - tempSize / 2;
           this.position.y = this.screenh / 2 - tempSize / 2;
-          //this.velocity.setCoord(0, 0);
+
           this.velocity.x = 0;
           this.velocity.y = 0;
           this.lives -= 1;
@@ -324,11 +335,13 @@ export class Player extends GameObject {
   turnLeft() {
     this.PhysicsEntity.orientation -= 3;
     this.angle = this.PhysicsEntity.orientation;
+    this.lightingEntity.orientation = this.angle;
   }
 
   turnRight() {
     this.PhysicsEntity.orientation += 3;
     this.angle = this.PhysicsEntity.orientation;
+    this.lightingEntity.orientation = this.angle;
   }
 
   accelerate() {
@@ -389,9 +402,6 @@ export class Player extends GameObject {
         model.ammo = `${displayedAmmo}%`;
       }
     }
-
-    //snap to stop
-    console.log(this.PhysicsEntity.speed);
 
     if (this.PhysicsEntity.speed <= 20) {
       this.PhysicsEntity.velocity = new Vector(0, 0);
@@ -758,5 +768,84 @@ export class Bullet extends GameObject {
     if (this.position.x < -11) this.destroy();
     if (this.position.y < -11) this.destroy();
     if (this.position.y > model.screenheight) this.destroy();
+  }
+}
+
+//new entity -> Star
+//slowly works its way around map during level
+//resets to left side of screen
+export class Star extends GameObject {
+  colors = ["#a9a4fcff", "#f6f6f6ff", "#e3fe98ff", "#fee594ff", "#ff8552ff"];
+  direction: "up" | "down" = "down";
+  color: string = "";
+  lightPosition: VectorLight;
+  screenw: number;
+  screenh: number;
+  constructor(screenw: number, screenh: number, lightarray: Light[], vp: Viewport) {
+    super("star");
+    //find starting spot
+    this.screenh = screenh;
+    this.screenw = screenw;
+    const tempSide = chance.integer({ min: 0, max: 3 });
+    this.direction = chance.pickone(["up", "down"]);
+
+    this.position.add(new Vector(-5, Math.floor(screenh / 2)), true);
+    this.color = chance.pickone(this.colors);
+    this.lightPosition = new VectorLight((this.position.x, this.position.y));
+
+    lightarray.push(
+      Lighting.addLight({
+        id: "star",
+        position: this.lightPosition,
+        radius: 0.95 * screenw,
+        color: this.color,
+        viewport: vp,
+      })
+    );
+  }
+
+  fadeLight() {
+    const colorString = this.color;
+    const alpha = colorString.slice(-2);
+    const colorcode = colorString.slice(0, 7);
+    let hexVal = parseInt(alpha, 16);
+    if (hexVal < 20) {
+      this.reset();
+      return;
+    }
+    hexVal -= 11;
+    this.color = `${colorcode}${hexVal.toString(16)}`;
+  }
+
+  reset() {
+    this.color = chance.pickone(this.colors);
+    this.position.x = -5;
+    this.position.y = Math.floor(this.screenh / 2);
+    this.direction = chance.pickone("up", "down");
+  }
+
+  update() {
+    //if at end of journey across screen, reset
+    if (this.lightPosition.x == this.screenw && this.lightPosition.y == Math.floor(this.screenh / 2)) {
+      this.fadeLight();
+      return;
+    }
+    console.log("in star update");
+
+    //normal movement operation
+    if (this.lightPosition.x == 0) {
+      //light is on left edge
+      if (this.lightPosition.y != 0 && this.lightPosition.y != this.screenh) {
+        //light is NOT on corner
+        if (this.direction == "up") this.lightPosition.y -= 1;
+        else this.lightPosition.y += 1;
+      } else this.lightPosition.x += 1;
+    } else if (this.lightPosition.x < this.screenw) this.lightPosition.x += 1; // moving across screen
+    else {
+      if (this.direction == "up") this.lightPosition.y += 1;
+      else this.lightPosition.y -= 1;
+    }
+    this.position.x = this.lightPosition.x;
+    this.position.y = this.lightPosition.y;
   }
 }

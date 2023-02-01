@@ -1,6 +1,6 @@
 import "./style.css";
 import { UI } from "@peasy-lib/peasy-ui";
-import { Physics, Vector } from "@peasy-lib/peasy-physics";
+import { Vector } from "@peasy-lib/peasy-physics";
 import { GameState } from "./states/gameState";
 import { MenuState } from "./states/menu";
 import { PlayState } from "./states/game";
